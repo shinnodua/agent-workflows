@@ -1,0 +1,41 @@
+@reference "../../../../styles.css";
+
+.badge {
+	@apply inline-flex rounded-full border-[3px] border-black px-3 py-1 text-xs font-black uppercase leading-none;
+}
+
+.approved {
+	@apply bg-neo-lime;
+}
+
+.blocked {
+	@apply bg-neo-red text-white;
+}
+
+.complete {
+	@apply bg-neo-blue;
+}
+
+.draft {
+	@apply bg-neo-yellow;
+}
+
+.needDesign {
+	@apply bg-neo-pink;
+}
+
+.designDone {
+	@apply bg-neo-blue;
+}
+
+.inProgress {
+	@apply bg-neo-orange;
+}
+
+.superseded {
+	@apply bg-neo-pink;
+}
+
+.unknown {
+	@apply bg-surface;
+}

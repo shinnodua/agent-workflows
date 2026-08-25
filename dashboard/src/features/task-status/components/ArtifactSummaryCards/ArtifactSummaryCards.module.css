@@ -1,0 +1,29 @@
+@reference "../../../../styles.css";
+
+.grid {
+	@apply grid gap-3 md:grid-cols-5;
+}
+
+.card {
+	@apply p-4;
+}
+
+.row {
+	@apply flex items-center justify-between gap-3;
+}
+
+.labelWrap {
+	@apply flex min-w-0 items-center gap-2;
+}
+
+.icon {
+	@apply size-5 shrink-0;
+}
+
+.label {
+	@apply truncate text-sm font-black uppercase;
+}
+
+.count {
+	@apply text-3xl font-black;
+}

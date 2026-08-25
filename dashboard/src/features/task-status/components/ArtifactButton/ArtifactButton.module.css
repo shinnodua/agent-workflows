@@ -1,0 +1,25 @@
+@reference "../../../../styles.css";
+
+.button {
+	@apply w-full rounded-xl border-[3px] border-black p-3 text-left transition-transform hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-[4px] focus-visible:outline-offset-2 focus-visible:outline-neo-blue;
+}
+
+.selected {
+	@apply bg-neo-yellow shadow-neo-active;
+}
+
+.default {
+	@apply bg-white;
+}
+
+.header {
+	@apply flex items-center justify-between gap-2;
+}
+
+.title {
+	@apply min-w-0 truncate text-sm font-black;
+}
+
+.path {
+	@apply mt-1 block break-all text-xs font-black text-black/60;
+}

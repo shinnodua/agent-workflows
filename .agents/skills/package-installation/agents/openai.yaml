@@ -1,0 +1,4 @@
+interface:
+  display_name: "Package Installation"
+  short_description: "Manage workspace dependencies with Bun"
+  default_prompt: "Use $package-installation to update workspace dependencies."

@@ -1,0 +1,9 @@
+{
+	"root": ["bun run workspace:check"],
+	"dashboard": [
+		"bun run dashboard:typecheck",
+		"bun run dashboard:test",
+		"bun run dashboard:build",
+		"bun run lint"
+	]
+}

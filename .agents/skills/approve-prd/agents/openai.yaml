@@ -1,0 +1,4 @@
+interface:
+  display_name: "Approve PRD"
+  short_description: "Approve a PRD and create plans"
+  default_prompt: "Use $approve-prd to approve this PRD and create implementation plans."

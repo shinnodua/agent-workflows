@@ -1,0 +1,3 @@
+display_name: Project Setup
+short_description: Fill project profile files step by step.
+default_prompt: Use $project-setup to guide project profile setup.

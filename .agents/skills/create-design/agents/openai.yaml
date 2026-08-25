@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Design"
+  short_description: "Use Open Design for UI/UX flows, specs, and design-system guidance"
+  default_prompt: "Use $create-design with Open Design to create or refine a UI/UX design for this feature."

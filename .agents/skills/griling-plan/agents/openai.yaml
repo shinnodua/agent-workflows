@@ -1,0 +1,4 @@
+interface:
+  display_name: "Griling Plan"
+  short_description: "Clarify and refine an existing plan"
+  default_prompt: "Use $griling-plan to ask one clarifying question at a time, include your recommended answer, and update this plan from my answers."
