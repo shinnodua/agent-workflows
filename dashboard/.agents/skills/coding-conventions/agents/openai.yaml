@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dashboard Coding Conventions"
+  short_description: "Write dashboard TypeScript cleanly"
+  default_prompt: "Use $coding-conventions to implement this dashboard code."

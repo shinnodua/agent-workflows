@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create PRD"
+  short_description: "Draft a workspace PRD from a request"
+  default_prompt: "Use $create-prd to draft a PRD from this feature request."

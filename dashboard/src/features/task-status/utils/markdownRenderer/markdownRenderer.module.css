@@ -1,0 +1,74 @@
+@reference "../../../../styles.css";
+
+.divider {
+	@apply border-t-[4px] border-black;
+}
+
+.codeBlock {
+	@apply max-w-full overflow-x-auto rounded-xl border-[3px] border-black bg-black p-4 text-sm font-bold text-white;
+}
+
+.code {
+	@apply block min-w-0 whitespace-pre;
+}
+
+.heading {
+	@apply min-w-0 font-black leading-tight;
+	overflow-wrap: anywhere;
+}
+
+.headingLevelOne {
+	@apply text-3xl;
+}
+
+.headingLevelTwo {
+	@apply text-2xl;
+}
+
+.headingLevelDefault {
+	@apply text-xl;
+}
+
+.orderedList {
+	@apply grid min-w-0 list-decimal gap-2 pl-6 font-bold;
+	overflow-wrap: anywhere;
+}
+
+.unorderedList {
+	@apply grid min-w-0 list-disc gap-2 pl-6 font-bold;
+	overflow-wrap: anywhere;
+}
+
+.quote {
+	@apply min-w-0 rounded-xl border-[3px] border-black bg-neo-blue p-4 font-black;
+	overflow-wrap: anywhere;
+}
+
+.tableWrap {
+	@apply max-w-full overflow-x-auto rounded-xl border-[3px] border-black;
+}
+
+.table {
+	@apply w-full border-collapse bg-white text-sm font-bold;
+}
+
+.tableHead {
+	@apply bg-neo-yellow;
+}
+
+.tableHeader {
+	@apply border-b-[3px] border-r-[3px] border-black p-3 text-left font-black last:border-r-0;
+}
+
+.tableRow {
+	@apply border-b-[3px] border-black last:border-b-0;
+}
+
+.tableCell {
+	@apply min-w-48 max-w-96 border-r-[3px] border-black p-3 align-top last:border-r-0;
+	overflow-wrap: anywhere;
+}
+
+.paragraph {
+	@apply font-bold leading-relaxed;
+}

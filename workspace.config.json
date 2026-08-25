@@ -1,0 +1,8 @@
+{
+	"projectName": "Agent Workflow Template",
+	"artifactDirectories": ["prds", "plans", "designs", "research", "docs"],
+	"projectProfile": "project/repositories.json",
+	"dashboard": {
+		"enabled": true
+	}
+}

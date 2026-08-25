@@ -1,0 +1,85 @@
+@reference "../../../../styles.css";
+
+.section {
+	@apply grid gap-4;
+}
+
+.header {
+	@apply flex items-end justify-between gap-4;
+}
+
+.eyebrow {
+	@apply m-0 text-xs font-black uppercase tracking-[0.14em] text-black/60;
+}
+
+.title {
+	@apply m-0 text-3xl font-black;
+}
+
+.description {
+	@apply m-0 mt-1 max-w-2xl text-sm font-semibold text-black/60;
+}
+
+.count {
+	@apply grid size-12 shrink-0 place-items-center rounded-full border-[3px] border-black bg-neo-yellow text-xl font-black shadow-neo-active;
+}
+
+.list {
+	@apply grid gap-3;
+}
+
+.card {
+	@apply grid gap-3 p-4;
+}
+
+.cardHeader,
+.cardFooter {
+	@apply flex items-center justify-between gap-3;
+}
+
+.cardTitleWrap {
+	@apply flex min-w-0 items-start gap-3;
+}
+
+.itemIcon {
+	@apply mt-1 size-5 shrink-0;
+}
+
+.itemTitle,
+.artifactTitle,
+.emptyTitle {
+	@apply m-0 font-black;
+}
+
+.itemReason,
+.emptyText {
+	@apply m-0 mt-1 text-sm font-semibold text-black/60;
+}
+
+.artifactTitle {
+	@apply break-words text-base;
+}
+
+.path {
+	@apply break-words text-xs font-bold text-black/60;
+}
+
+.openButton {
+	@apply inline-flex shrink-0 items-center gap-1 rounded-lg border-[3px] border-black bg-neo-yellow px-3 py-1.5 text-sm font-black transition-transform hover:-translate-y-0.5;
+}
+
+.openIcon {
+	@apply size-4;
+}
+
+.empty {
+	@apply flex items-center gap-4 p-5;
+}
+
+.emptyIcon {
+	@apply size-8 shrink-0;
+}
+
+.emptyTitle {
+	@apply text-lg;
+}

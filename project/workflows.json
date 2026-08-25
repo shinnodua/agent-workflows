@@ -1,0 +1,20 @@
+{
+	"implementationStages": [
+		{
+			"id": "shared",
+			"repositoryIds": ["example-core"],
+			"parallel": false
+		},
+		{
+			"id": "backend",
+			"repositoryIds": ["example-service"],
+			"parallel": false
+		},
+		{
+			"id": "frontend",
+			"repositoryIds": ["example-web"],
+			"parallel": true,
+			"condition": "Run after required shared contracts and APIs are available locally."
+		}
+	]
+}

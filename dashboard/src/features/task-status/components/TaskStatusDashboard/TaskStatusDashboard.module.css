@@ -1,0 +1,9 @@
+@reference "../../../../styles.css";
+
+.layout {
+	@apply grid min-w-[920px] grid-cols-[280px_minmax(0,1fr)] gap-5 px-4 py-5;
+}
+
+.content {
+	@apply grid min-w-0 gap-5;
+}

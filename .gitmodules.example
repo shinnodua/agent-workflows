@@ -1,0 +1,9 @@
+[submodule "modules/example-core"]
+	path = modules/example-core
+	url = git@github.com:example/example-core.git
+[submodule "modules/example-service"]
+	path = modules/example-service
+	url = git@github.com:example/example-service.git
+[submodule "modules/example-web"]
+	path = modules/example-web
+	url = git@github.com:example/example-web.git
