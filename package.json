@@ -6,6 +6,7 @@
 	"type": "module",
 	"packageManager": "bun@1.3.14",
 	"workspaces": [
+		".",
 		"dashboard"
 	],
 	"publishConfig": {
