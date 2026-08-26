@@ -7,7 +7,7 @@
 - Type: `prd`
 - Status: `approved`
 - Created: `2026-08-25`
-- Last updated: `2026-08-25`
+- Last updated: `2026-08-26`
 - Owner: `project-manager`
 - Related artifact IDs: `[]`
 - Source request: `Setup Changesets and gitflow to build package.`
@@ -56,8 +56,8 @@ Functional requirements:
 - Developers can run `bun run package:build` to validate and dry-run package
   packing.
 - CI validates pushes and pull requests on `main`.
-- Release automation creates a Changesets version PR or publishes to npm from
-  `main`.
+- Release automation creates a Changesets version PR or publishes to GitHub
+  Packages from `main`.
 
 Non-functional requirements:
 
@@ -85,7 +85,8 @@ Non-functional requirements:
 - Events or runtime interfaces:
   - Package scripts: `changeset`, `version`, `release`, `package:dry-run`,
     `package:pack`, `package:build`.
-  - GitHub secret: `NPM_TOKEN`.
+  - GitHub token: release workflow uses `secrets.GITHUB_TOKEN` with
+    `packages: write`.
 - Compatibility requirements:
   - Existing CLI and dashboard package behavior must keep working.
 
@@ -105,8 +106,8 @@ commands a developer needs before opening or merging a PR.
 
 ## Risks And Tradeoffs
 
-- Risk: Release workflow cannot publish without `NPM_TOKEN`. Mitigation:
-  document the secret requirement.
+- Risk: GitHub Packages rejects unscoped npm package names. Mitigation: publish
+  as `@shinnodua/agent-workflows`.
 - Risk: `bun-version: latest` can change CI behavior over time. Mitigation:
   package lockfile and validation catch regressions before publish.
 

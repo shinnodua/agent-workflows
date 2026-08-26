@@ -10,6 +10,6 @@ Commit the generated Markdown file with the package change. The release workflow
 turns pending changesets into a version PR on `main`, then publishes when that PR
 is merged.
 
-The version PR requires either the repository Actions setting that allows GitHub
-Actions to create pull requests, or an `GITHUB_TOKEN` secret with contents and
-pull request write access.
+This package publishes to GitHub Packages as `@shinnodua/agent-workflows`.
+GitHub Packages requires scoped npm package names and the workflow uses
+`secrets.GITHUB_TOKEN` with `packages: write` for publishing.
