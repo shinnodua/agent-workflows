@@ -60,13 +60,13 @@ Install the package globally when you want the `workflows` command available in
 your shell:
 
 ```sh
-bun add --global agent-workflows
+bun add --global @shinnodua/agent-workflows
 ```
 
 Or install it in the developer project as a dev dependency:
 
 ```sh
-bun add --dev agent-workflows
+bun add --dev @shinnodua/agent-workflows
 ```
 
 Initialize workflow files from the project root:

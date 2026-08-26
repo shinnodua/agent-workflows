@@ -12,13 +12,13 @@ Install the package globally when you want the `workflows` command available in
 your shell:
 
 ```sh
-bun add --global agent-workflows
+bun add --global @shinnodua/agent-workflows
 ```
 
 Or install it in a project as a dev dependency:
 
 ```sh
-bun add --dev agent-workflows
+bun add --dev @shinnodua/agent-workflows
 ```
 
 Then initialize the project:
@@ -78,10 +78,17 @@ GitHub Actions runs CI on pull requests and pushes to `main`. The release
 workflow uses Changesets to open a version PR, then publishes after that PR is
 merged.
 
-The release workflow needs permission to create the Changesets version PR.
-Either enable `Allow GitHub Actions to create and approve pull requests` under
-repository Actions settings, or add an `GITHUB_TOKEN` repository secret containing
-a fine-grained GitHub token with contents and pull request write access.
+The release workflow publishes to GitHub Packages. The package must stay scoped
+as `@shinnodua/agent-workflows`, and repository Actions settings must allow
+GitHub Actions to create pull requests. The workflow uses `github.token` with
+`packages: write`, so no npm registry token is required.
+
+To install from GitHub Packages, configure the package scope in the consuming
+project or user npm config:
+
+```ini
+@shinnodua:registry=https://npm.pkg.github.com
+```
 
 ## Project Setup
 

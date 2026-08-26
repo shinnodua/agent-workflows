@@ -10,7 +10,7 @@
   - `None`: Repository inspection only.
 - Status: `approved`
 - Created: `2026-08-25`
-- Last updated: `2026-08-25`
+- Last updated: `2026-08-26`
 - Owner: `tech-lead`
 - Related artifact IDs: `[]`
 
@@ -30,7 +30,7 @@ template can be built and released consistently from GitHub.
   - Changesets should own version bumps and changelog generation.
   - CI should fail before publish if workspace validation or package packing
     breaks.
-  - Publish automation should rely on GitHub and npm tokens from secrets.
+  - Publish automation should target GitHub Packages and use `github.token`.
 - Source gaps:
   - `None`
 
@@ -84,8 +84,8 @@ No submodules are affected.
 
 ## Risks
 
-- Risk: Publish fails when `NPM_TOKEN` is missing. Mitigation: document secret
-  requirement.
+- Risk: GitHub Packages rejects unscoped npm package names. Mitigation: publish
+  as `@shinnodua/agent-workflows`.
 - Risk: Package dry-run can miss runtime behavior. Mitigation: keep CLI smoke
   checks as part of local validation when changing CLI behavior.
 

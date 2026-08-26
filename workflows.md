@@ -9,7 +9,7 @@ step-by-step workflow behavior here.
 Install Agent Workflows in the project that should follow this workflow:
 
 ```sh
-bun add --dev agent-workflows
+bun add --dev @shinnodua/agent-workflows
 ```
 
 Initialize workflow files from the project root:
