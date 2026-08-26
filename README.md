@@ -80,7 +80,7 @@ merged.
 
 The release workflow needs permission to create the Changesets version PR.
 Either enable `Allow GitHub Actions to create and approve pull requests` under
-repository Actions settings, or add an `AUTH_TOKEN` repository secret containing
+repository Actions settings, or add an `GITHUB_TOKEN` repository secret containing
 a fine-grained GitHub token with contents and pull request write access.
 
 ## Project Setup
