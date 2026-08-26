@@ -12,4 +12,4 @@ is merged.
 
 This package publishes to GitHub Packages as `@shinnodua/agent-workflows`.
 GitHub Packages requires scoped npm package names and the workflow uses
-`github.token` with `packages: write` for publishing.
+`secrets.GITHUB_TOKEN` with `packages: write` for publishing.

@@ -80,8 +80,8 @@ merged.
 
 The release workflow publishes to GitHub Packages. The package must stay scoped
 as `@shinnodua/agent-workflows`, and repository Actions settings must allow
-GitHub Actions to create pull requests. The workflow uses `github.token` with
-`packages: write`, so no npm registry token is required.
+GitHub Actions to create pull requests. The workflow uses `secrets.GITHUB_TOKEN`
+with `packages: write`, so no npm registry token is required.
 
 To install from GitHub Packages, configure the package scope in the consuming
 project or user npm config:

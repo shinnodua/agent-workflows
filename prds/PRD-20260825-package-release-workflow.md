@@ -85,7 +85,8 @@ Non-functional requirements:
 - Events or runtime interfaces:
   - Package scripts: `changeset`, `version`, `release`, `package:dry-run`,
     `package:pack`, `package:build`.
-  - GitHub token: release workflow uses `github.token` with `packages: write`.
+  - GitHub token: release workflow uses `secrets.GITHUB_TOKEN` with
+    `packages: write`.
 - Compatibility requirements:
   - Existing CLI and dashboard package behavior must keep working.
 

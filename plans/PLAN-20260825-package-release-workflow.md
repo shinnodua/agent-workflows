@@ -30,7 +30,8 @@ template can be built and released consistently from GitHub.
   - Changesets should own version bumps and changelog generation.
   - CI should fail before publish if workspace validation or package packing
     breaks.
-  - Publish automation should target GitHub Packages and use `github.token`.
+  - Publish automation should target GitHub Packages and use
+    `secrets.GITHUB_TOKEN`.
 - Source gaps:
   - `None`
 
