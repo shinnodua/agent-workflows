@@ -76,7 +76,12 @@ bun run package:build
 
 GitHub Actions runs CI on pull requests and pushes to `main`. The release
 workflow uses Changesets to open a version PR, then publishes after that PR is
-merged. Configure `NPM_TOKEN` in repository secrets before publishing.
+merged.
+
+The release workflow needs permission to create the Changesets version PR.
+Either enable `Allow GitHub Actions to create and approve pull requests` under
+repository Actions settings, or add an `AUTH_TOKEN` repository secret containing
+a fine-grained GitHub token with contents and pull request write access.
 
 ## Project Setup
 
