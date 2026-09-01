@@ -31,6 +31,10 @@ workflows init
 starter `project/` profile files when they do not exist, and records managed
 files in `.agent-workflows/manifest.json`.
 
+Restart or reload any active agent session after `workflows init`. Source agents
+discover commands and skills from the copied `.codex/prompts/`,
+`.agents/skills/`, and `commands/` files.
+
 Then fill the project profile with the guided command:
 
 ```sh
@@ -53,12 +57,16 @@ workflows check
   files step by step.
 - `workflows dashboard` starts the packaged dashboard and reads artifact data
   from the developer project root.
-- `workflows update` refreshes workflow-owned files after upgrading this package.
+- `workflows update` refreshes workflow-owned files after upgrading this package
+  or when package lifecycle scripts are disabled.
 - `workflows integrity` validates workspace artifact metadata.
 - `workflows check` runs package-provided workspace checks.
 
-After package installation or upgrade, initialized projects receive a reminder
-to run `workflows update`.
+After package installation or upgrade, initialized projects automatically run a
+best-effort `workflows update` so source agents can load the current packaged
+commands and skills. Set `AGENT_WORKFLOWS_SKIP_AUTO_UPDATE=1` to skip that
+lifecycle refresh, then run `workflows update` manually from the project root.
+Restart or reload any active agent session after either path.
 
 ## Build And Release
 

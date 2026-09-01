@@ -84,7 +84,12 @@ Then run the guided setup command to fill the project profile files:
 The command copies reusable workflow files, creates starter project profile files
 when they do not exist, and writes `.agent-workflows/manifest.json`.
 
-When the package is upgraded in an initialized project, run:
+Restart or reload any active agent session after `workflows init` so it can
+discover the copied `.codex/prompts/`, `.agents/skills/`, and `commands/`
+assets.
+
+When the package is installed or upgraded in an initialized project, package
+lifecycle scripts automatically run a best-effort refresh equivalent to:
 
 ```sh
 workflows update
@@ -92,7 +97,10 @@ workflows update
 
 The update command refreshes workflow-owned files and leaves project profile
 files, existing PRDs, plans, designs, research, docs, and submodules under
-developer control.
+developer control. If lifecycle scripts are disabled, or if you set
+`AGENT_WORKFLOWS_SKIP_AUTO_UPDATE=1`, run `workflows update` manually from the
+project root. Restart or reload any active agent session after the refresh so it
+can discover updated commands and skills.
 
 1. Replace `project/PROJECT.md` with the new project's purpose and ownership
    rules.

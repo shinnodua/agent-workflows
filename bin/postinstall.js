@@ -1,7 +1,9 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 
 const initCwd = process.env.INIT_CWD;
 
@@ -11,10 +13,45 @@ if (!initCwd) {
 
 const manifestPath = path.join(initCwd, ".agent-workflows", "manifest.json");
 
-if (!fs.existsSync(manifestPath)) {
+if (/^(1|true)$/i.test(process.env.AGENT_WORKFLOWS_SKIP_AUTO_UPDATE ?? "")) {
+	console.log(
+		"Agent Workflows auto-update was skipped. Run `workflows update` to refresh commands and skills.",
+	);
 	process.exit(0);
 }
 
-console.log(
-	"Agent Workflows was installed or updated. This project is initialized; run `workflows update` to refresh workflow files.",
+if (!fs.existsSync(manifestPath)) {
+	console.log(
+		"Agent Workflows installed. Run `workflows init` from the project root so source agents can load packaged commands and skills.",
+	);
+	process.exit(0);
+}
+
+const packageRoot = path.resolve(
+	path.dirname(fileURLToPath(import.meta.url)),
+	"..",
 );
+const workflowsBin = path.join(packageRoot, "bin", "workflows.js");
+const result = spawnSync(
+	process.execPath,
+	[workflowsBin, "update", "--root", initCwd],
+	{
+		env: {
+			...process.env,
+			AGENT_WORKFLOWS_POSTINSTALL: "1",
+		},
+		stdio: "inherit",
+	},
+);
+
+if (result.status === 0) {
+	console.log(
+		"Agent Workflows commands and skills were refreshed. Restart or reload any active agent session to pick them up.",
+	);
+	process.exit(0);
+}
+
+console.warn(
+	"Agent Workflows could not auto-refresh workflow files. Run `workflows update` from the project root.",
+);
+process.exit(0);

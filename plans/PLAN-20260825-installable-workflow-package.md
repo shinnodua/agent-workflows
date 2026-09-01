@@ -10,7 +10,7 @@
   - `None`: Repository inspection only.
 - Status: `approved`
 - Created: `2026-08-25`
-- Last updated: `2026-08-25`
+- Last updated: `2026-09-01`
 - Owner: `tech-lead`
 - Related artifact IDs: `[]`
 
@@ -30,10 +30,14 @@ and refreshes workflow-owned files after package upgrades.
 - Key planning implications:
   - Root package metadata must expose a `workflows` binary and include all files
     used by the CLI and dashboard.
+  - Command shims that delegate to `.agents/skills/` must ship with matching
+    `SKILL.md` sources.
   - Dashboard workspace discovery must accept a caller-provided root instead of
     assuming the package checkout is the workspace.
   - Update behavior needs a manifest so the package has a clear ownership
     boundary.
+  - Initialized consuming workspaces need command and skill files refreshed after
+    package lifecycle updates before source agents can discover new behavior.
 - Source gaps:
   - `None`
 
@@ -42,6 +46,7 @@ and refreshes workflow-owned files after package upgrades.
 In scope:
 
 - Root CLI scripts and package metadata.
+- Package lifecycle refresh behavior for initialized consuming workspaces.
 - Dashboard Vite workspace-root configuration.
 - README and setup documentation.
 - Root PRD and plan artifacts for traceability.
@@ -65,6 +70,9 @@ assets and runs dashboard tooling against a developer-selected project root.
 
 - Data contracts: `.agent-workflows/manifest.json` records package version and
   managed files.
+- Lifecycle contract: package postinstall runs a best-effort `workflows update`
+  for initialized consuming workspaces, with `AGENT_WORKFLOWS_SKIP_AUTO_UPDATE=1`
+  as the documented opt-out.
 - Shared packages or APIs: Root package dependencies include dashboard runtime
   dependencies.
 - Runtime flow: `workflows dashboard` sets `WORKFLOWS_WORKSPACE_ROOT` before
@@ -75,7 +83,8 @@ assets and runs dashboard tooling against a developer-selected project root.
 ## Sequence
 
 1. Add PRD and root plan artifacts.
-2. Add CLI and postinstall scripts.
+2. Update CLI and postinstall scripts so initialized consuming workspaces refresh
+   command and skill assets automatically after package install or upgrade.
 3. Update package metadata and documentation.
 4. Update dashboard root resolution.
 5. Install/update lockfile as needed.

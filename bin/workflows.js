@@ -78,6 +78,9 @@ function initWorkspace(root) {
 	console.log(
 		"Next: use /project-setup or $project-setup to configure this project's workflow profile.",
 	);
+	console.log(
+		"Restart or reload any active agent session so it can discover the copied commands and skills.",
+	);
 }
 
 function updateWorkspace(root) {
@@ -89,6 +92,9 @@ function updateWorkspace(root) {
 	console.log(`Updated ${copied.length} workflow files in ${root}`);
 	console.log(
 		"Project profile files and existing artifacts were left unchanged.",
+	);
+	console.log(
+		"Restart or reload any active agent session so it can discover refreshed commands and skills.",
 	);
 }
 
@@ -315,5 +321,10 @@ Commands:
   update     Refresh workflow-owned files from the installed package.
   dashboard  Start the packaged dashboard against the developer project.
   integrity  Run the packaged workspace integrity check against the project.
-  check      Run package-provided workspace checks against the project.`);
+  check      Run package-provided workspace checks against the project.
+
+Agent command and skill loading:
+  Run workflows init once after installing in a new project.
+  Run workflows update after package upgrades or when lifecycle scripts are disabled.
+  Restart or reload active agent sessions after either command.`);
 }

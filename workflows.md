@@ -18,6 +18,10 @@ Initialize workflow files from the project root:
 workflows init
 ```
 
+Restart or reload any active agent session after initialization so source agents
+can discover the copied `.codex/prompts/`, `.agents/skills/`, and `commands/`
+assets.
+
 Fill the project profile files with guided setup:
 
 ```sh
@@ -25,11 +29,16 @@ Fill the project profile files with guided setup:
 ```
 
 When Agent Workflows is upgraded in an initialized project, refresh reusable
-workflow files:
+workflow files. Package lifecycle scripts run this refresh automatically when
+available; run it manually if lifecycle scripts are disabled or
+`AGENT_WORKFLOWS_SKIP_AUTO_UPDATE=1` is set:
 
 ```sh
 workflows update
 ```
+
+Restart or reload any active agent session after the refresh so it can discover
+updated commands and skills.
 
 Clone an existing initialized workspace with submodules:
 

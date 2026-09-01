@@ -7,7 +7,7 @@
 - Type: `prd`
 - Status: `approved`
 - Created: `2026-08-25`
-- Last updated: `2026-08-25`
+- Last updated: `2026-09-01`
 - Owner: `project-manager`
 - Related artifact IDs: `[]`
 - Source request: `Make this repo an installable workflow template package with workflows init, workflows dashboard, and workflows update.`
@@ -40,8 +40,8 @@ data, and refresh workflow-owned files when the package version changes.
   project, not the installed package directory.
 - Support `workflows update` to refresh workflow-owned files in an initialized
   project.
-- Notify initialized projects after package install or upgrade that
-  `workflows update` is available.
+- Refresh initialized projects after package install or upgrade so source agents
+  can load current packaged commands and skills.
 
 ## Non-Goals
 
@@ -63,6 +63,8 @@ Functional requirements:
 - `workflows init` creates the required workflow directories and copies reusable
   agent guides, commands, skills, prompt shims, templates, roles, docs, scripts,
   and workspace config into the current project.
+- Every packaged command shim has a matching packaged skill source when the
+  command delegates to `.agents/skills/<command>/SKILL.md`.
 - `workflows init` creates starter `project/` files only when they do not
   already exist.
 - `workflows init` records package version and managed files in a local manifest.
@@ -71,8 +73,12 @@ Functional requirements:
   artifact content unless those files are explicitly managed by the manifest.
 - `workflows dashboard` starts the packaged dashboard with the target workspace
   root set to the caller's project.
-- Package installation or upgrade prints a suggestion to run `workflows update`
-  when the target project is already initialized.
+- Package installation or upgrade automatically runs a best-effort
+  `workflows update` when the target project is already initialized.
+- Package installation in an uninitialized project tells developers to run
+  `workflows init` so source agents can load packaged commands and skills.
+- Developers can opt out of automatic lifecycle refresh with
+  `AGENT_WORKFLOWS_SKIP_AUTO_UPDATE=1` and run `workflows update` manually.
 
 Non-functional requirements:
 
@@ -87,9 +93,12 @@ Non-functional requirements:
 2. Developer runs `workflows init` from the project root.
 3. Developer edits `project/` to describe their repositories.
 4. Developer runs `workflows dashboard` to inspect artifacts from that project.
-5. Later, developer updates the package and sees a prompt to run
-   `workflows update`.
-6. Developer runs `workflows update` to refresh workflow-owned files.
+5. Later, developer updates the package and the package lifecycle refreshes
+   workflow-owned command and skill files automatically.
+6. If lifecycle scripts are disabled or skipped, developer runs
+   `workflows update` to refresh workflow-owned files manually.
+7. Developer restarts or reloads any active agent session so the refreshed
+   commands and skills are discovered.
 
 ## Affected Platforms
 
@@ -122,6 +131,12 @@ output visible so developers can open the served URL.
   overwriting developer-owned project profile or artifact files.
 - Running `workflows dashboard --root <dir>` starts the dashboard with artifact
   discovery rooted at `<dir>`.
+- Installing or upgrading the package in an initialized project refreshes
+  workflow-owned commands, prompt shims, and skills automatically.
+- Package dry-run contents include a `SKILL.md` source for each command shim that
+  delegates to `.agents/skills/`.
+- Developers have a documented manual recovery path with `workflows update` and
+  an explicit active-agent reload step.
 - Package metadata exposes the `workflows` binary and includes files required at
   runtime.
 - Validation commands pass for root and dashboard changes.
