@@ -38,6 +38,10 @@ and refreshes workflow-owned files after package upgrades.
     boundary.
   - Initialized consuming workspaces need command and skill files refreshed after
     package lifecycle updates before source agents can discover new behavior.
+  - Project-local installs expose the binary through `node_modules/.bin`; docs
+    and fallback messages need `bunx workflows ...` for interactive shells.
+  - Consuming projects should keep small local discovery shims while reusable
+    workflow content remains package-owned.
 - Source gaps:
   - `None`
 
@@ -47,6 +51,8 @@ In scope:
 
 - Root CLI scripts and package metadata.
 - Package lifecycle refresh behavior for initialized consuming workspaces.
+- Hybrid local shim generation for skills, commands, prompt shims, workflow
+  docs, roles, and templates.
 - Dashboard Vite workspace-root configuration.
 - README and setup documentation.
 - Root PRD and plan artifacts for traceability.
@@ -70,9 +76,15 @@ assets and runs dashboard tooling against a developer-selected project root.
 
 - Data contracts: `.agent-workflows/manifest.json` records package version and
   managed files.
+- Source model: consuming projects keep local shims for agent discovery; package
+  files under the installed `@shinnodua/agent-workflows` package remain the
+  reusable source of truth.
 - Lifecycle contract: package postinstall runs a best-effort `workflows update`
   for initialized consuming workspaces, with `AGENT_WORKFLOWS_SKIP_AUTO_UPDATE=1`
   as the documented opt-out.
+- Invocation contract: global installs may use bare `workflows`; project-local
+  installs should use `bunx workflows ...` or package scripts that add
+  `node_modules/.bin` to `PATH`.
 - Shared packages or APIs: Root package dependencies include dashboard runtime
   dependencies.
 - Runtime flow: `workflows dashboard` sets `WORKFLOWS_WORKSPACE_ROOT` before
@@ -85,10 +97,12 @@ assets and runs dashboard tooling against a developer-selected project root.
 1. Add PRD and root plan artifacts.
 2. Update CLI and postinstall scripts so initialized consuming workspaces refresh
    command and skill assets automatically after package install or upgrade.
-3. Update package metadata and documentation.
-4. Update dashboard root resolution.
-5. Install/update lockfile as needed.
-6. Run validation commands.
+3. Generate local reference shims instead of copying full reusable workflow
+   sources into consuming projects.
+4. Update package metadata and documentation.
+5. Update dashboard root resolution.
+6. Install/update lockfile as needed.
+7. Run validation commands.
 
 ## Validation
 

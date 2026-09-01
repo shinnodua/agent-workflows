@@ -21,19 +21,22 @@ Or install it in a project as a dev dependency:
 bun add --dev @shinnodua/agent-workflows
 ```
 
-Then initialize the project:
+Then initialize the project. Use `workflows` after a global install, or
+`bunx workflows` when the package is installed as a project dev dependency:
 
 ```sh
-workflows init
+bunx workflows init
 ```
 
-`workflows init` copies reusable workflow files into the current project, creates
+`workflows init` writes local discovery shims into the current project, creates
 starter `project/` profile files when they do not exist, and records managed
-files in `.agent-workflows/manifest.json`.
+files in `.agent-workflows/manifest.json`. The shims let source agents discover
+commands and skills locally while the source of truth stays in the installed
+package.
 
 Restart or reload any active agent session after `workflows init`. Source agents
-discover commands and skills from the copied `.codex/prompts/`,
-`.agents/skills/`, and `commands/` files.
+discover commands and skills from local `.codex/prompts/`, `.agents/skills/`,
+`commands/`, and `workflows.md` shims.
 
 Then fill the project profile with the guided command:
 
@@ -44,12 +47,12 @@ Then fill the project profile with the guided command:
 ## Commands
 
 ```sh
-workflows init
+bunx workflows init
 project-setup
-workflows dashboard
-workflows update
-workflows integrity
-workflows check
+bunx workflows dashboard
+bunx workflows update
+bunx workflows integrity
+bunx workflows check
 ```
 
 - `workflows init` sets up a developer project to follow the workflow.
@@ -57,7 +60,7 @@ workflows check
   files step by step.
 - `workflows dashboard` starts the packaged dashboard and reads artifact data
   from the developer project root.
-- `workflows update` refreshes workflow-owned files after upgrading this package
+- `workflows update` refreshes workflow-owned shims after upgrading this package
   or when package lifecycle scripts are disabled.
 - `workflows integrity` validates workspace artifact metadata.
 - `workflows check` runs package-provided workspace checks.
@@ -65,8 +68,26 @@ workflows check
 After package installation or upgrade, initialized projects automatically run a
 best-effort `workflows update` so source agents can load the current packaged
 commands and skills. Set `AGENT_WORKFLOWS_SKIP_AUTO_UPDATE=1` to skip that
-lifecycle refresh, then run `workflows update` manually from the project root.
-Restart or reload any active agent session after either path.
+lifecycle refresh, then run `bunx workflows update` manually from the project
+root. Restart or reload any active agent session after either path.
+
+## Local Shims
+
+Agent Workflows keeps reusable source files in the installed package and writes
+small local shims for agent discovery:
+
+- `.agents/skills/*/SKILL.md`
+- `.codex/prompts/*.md`
+- `commands/*.md`
+- `AGENTS.md`
+- `workflows.md`
+- reusable `roles/`, `templates/`, and setup docs
+
+Those shims point back to
+`node_modules/@shinnodua/agent-workflows/...` for project-local installs, or to
+the actual package install path for global installs. Project-owned files such as
+`project/`, `prds/`, `plans/`, `designs/`, `research/`, `docs/`, and `modules/`
+remain local to the consuming workspace.
 
 ## Build And Release
 
@@ -105,8 +126,8 @@ After initialization:
 1. Edit `project/PROJECT.md` with your product context and ownership boundaries.
 2. Edit `project/repositories.json` with your repositories and submodule paths.
 3. Add matching Git submodules under `modules/`.
-4. Run `workflows integrity` or `workflows check`.
-5. Start the dashboard with `workflows dashboard`.
+4. Run `bunx workflows integrity` or `bunx workflows check`.
+5. Start the dashboard with `bunx workflows dashboard`.
 
 See [docs/workspace-template-setup.md](docs/workspace-template-setup.md) for the
 full adaptation checklist.

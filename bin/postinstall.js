@@ -15,14 +15,14 @@ const manifestPath = path.join(initCwd, ".agent-workflows", "manifest.json");
 
 if (/^(1|true)$/i.test(process.env.AGENT_WORKFLOWS_SKIP_AUTO_UPDATE ?? "")) {
 	console.log(
-		"Agent Workflows auto-update was skipped. Run `workflows update` to refresh commands and skills.",
+		"Agent Workflows auto-update was skipped. Run `bunx workflows update` to refresh commands and skills.",
 	);
 	process.exit(0);
 }
 
 if (!fs.existsSync(manifestPath)) {
 	console.log(
-		"Agent Workflows installed. Run `workflows init` from the project root so source agents can load packaged commands and skills.",
+		"Agent Workflows installed. Run `bunx workflows init` from the project root so source agents can load packaged commands and skills.",
 	);
 	process.exit(0);
 }
@@ -46,12 +46,12 @@ const result = spawnSync(
 
 if (result.status === 0) {
 	console.log(
-		"Agent Workflows commands and skills were refreshed. Restart or reload any active agent session to pick them up.",
+		"Agent Workflows command and skill shims were refreshed. Restart or reload any active agent session to pick them up.",
 	);
 	process.exit(0);
 }
 
 console.warn(
-	"Agent Workflows could not auto-refresh workflow files. Run `workflows update` from the project root.",
+	"Agent Workflows could not auto-refresh workflow files. Run `bunx workflows update` from the project root.",
 );
 process.exit(0);

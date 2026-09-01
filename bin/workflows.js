@@ -14,6 +14,10 @@ const packageRoot = path.resolve(
 const manifestDirectory = ".agent-workflows";
 const manifestPath = path.join(manifestDirectory, "manifest.json");
 const packageJson = readJson(path.join(packageRoot, "package.json"));
+const packageLocalPath = path.join(
+	"node_modules",
+	...packageJson.name.split("/"),
+);
 
 const managedPaths = [
 	"AGENTS.md",
@@ -66,35 +70,35 @@ try {
 
 function initWorkspace(root) {
 	ensureDirectory(root);
-	const copied = copyPaths(root, managedPaths, { overwrite: false });
+	const managed = copyPaths(root, managedPaths, { overwrite: false });
 	const scaffolded = copyPaths(root, scaffoldOnlyPaths, { overwrite: false });
 	mergePackageScripts(root);
 	writeManifest(root);
 
 	console.log(`Initialized Agent Workflows in ${root}`);
 	console.log(
-		`Copied ${copied.length} workflow files and scaffolded ${scaffolded.length} project files.`,
+		`Wrote ${managed.length} managed workflow files and scaffolded ${scaffolded.length} project files.`,
 	);
 	console.log(
 		"Next: use /project-setup or $project-setup to configure this project's workflow profile.",
 	);
 	console.log(
-		"Restart or reload any active agent session so it can discover the copied commands and skills.",
+		"Restart or reload any active agent session so it can discover the local command and skill shims.",
 	);
 }
 
 function updateWorkspace(root) {
 	const manifest = loadManifest(root);
 	const paths = manifest?.managedPaths ?? managedPaths;
-	const copied = copyPaths(root, paths, { overwrite: true });
+	const managed = copyPaths(root, paths, { overwrite: true });
 	writeManifest(root);
 
-	console.log(`Updated ${copied.length} workflow files in ${root}`);
+	console.log(`Updated ${managed.length} managed workflow files in ${root}`);
 	console.log(
 		"Project profile files and existing artifacts were left unchanged.",
 	);
 	console.log(
-		"Restart or reload any active agent session so it can discover refreshed commands and skills.",
+		"Restart or reload any active agent session so it can discover refreshed command and skill shims.",
 	);
 }
 
@@ -156,7 +160,7 @@ function runPackagedScript(scriptPath, root) {
 }
 
 function copyPaths(root, relativePaths, options) {
-	const copied = [];
+	const written = [];
 
 	for (const relativePath of relativePaths) {
 		const source = path.join(packageRoot, relativePath);
@@ -167,22 +171,22 @@ function copyPaths(root, relativePaths, options) {
 		if (fs.statSync(source).isDirectory()) {
 			for (const filePath of walkFiles(source)) {
 				const nestedRelativePath = path.relative(packageRoot, filePath);
-				if (copyFile(root, nestedRelativePath, options)) {
-					copied.push(nestedRelativePath);
+				if (writeManagedFile(root, nestedRelativePath, options)) {
+					written.push(nestedRelativePath);
 				}
 			}
 			continue;
 		}
 
-		if (copyFile(root, relativePath, options)) {
-			copied.push(relativePath);
+		if (writeManagedFile(root, relativePath, options)) {
+			written.push(relativePath);
 		}
 	}
 
-	return copied;
+	return written;
 }
 
-function copyFile(root, relativePath, options) {
+function writeManagedFile(root, relativePath, options) {
 	const source = path.join(packageRoot, relativePath);
 	const target = path.join(root, relativePath);
 
@@ -191,8 +195,140 @@ function copyFile(root, relativePath, options) {
 	}
 
 	fs.mkdirSync(path.dirname(target), { recursive: true });
-	fs.copyFileSync(source, target);
+	if (shouldWriteReferenceShim(relativePath)) {
+		fs.writeFileSync(target, buildReferenceShim(root, relativePath));
+	} else {
+		fs.copyFileSync(source, target);
+	}
 	return true;
+}
+
+function shouldWriteReferenceShim(relativePath) {
+	const normalized = toPosixPath(relativePath);
+	if (normalized === "AGENTS.md" || normalized === "workflows.md") return true;
+	if (normalized === "docs/workspace-template-setup.md") return true;
+	if (normalized.startsWith("commands/") && normalized.endsWith(".md")) {
+		return true;
+	}
+	if (normalized.startsWith(".codex/prompts/") && normalized.endsWith(".md")) {
+		return true;
+	}
+	if (
+		normalized.startsWith(".agents/skills/") &&
+		normalized.endsWith("SKILL.md")
+	) {
+		return true;
+	}
+	if (
+		(normalized.startsWith("roles/") || normalized.startsWith("templates/")) &&
+		normalized.endsWith(".md")
+	) {
+		return true;
+	}
+	return false;
+}
+
+function buildReferenceShim(root, relativePath) {
+	const normalized = toPosixPath(relativePath);
+	const packageSourceRoot = packageSourceRootReference(root);
+	const packagePath = toPosixPath(path.join(packageSourceRoot, normalized));
+	const source = fs.readFileSync(path.join(packageRoot, normalized), "utf8");
+
+	if (
+		normalized.startsWith(".agents/skills/") &&
+		normalized.endsWith("SKILL.md")
+	) {
+		return buildSkillShim(normalized, packagePath, packageSourceRoot, source);
+	}
+
+	if (normalized.startsWith(".codex/prompts/")) {
+		return buildPromptShim(normalized, packagePath, packageSourceRoot);
+	}
+
+	return buildMarkdownShim(normalized, packagePath, packageSourceRoot);
+}
+
+function buildSkillShim(relativePath, packagePath, packageSourceRoot, source) {
+	const frontmatter = extractFrontmatter(source);
+	const title = path.basename(path.dirname(relativePath));
+	return `${frontmatter ?? ""}# ${title}
+
+This local file is an Agent Workflows discovery shim.
+
+Packaged source of truth:
+
+\`${packagePath}\`
+
+Read the packaged source completely and follow it as this skill's instructions.
+When the packaged source references reusable files such as \`AGENTS.md\`,
+\`workflows.md\`, \`roles/...\`, \`templates/...\`, \`commands/...\`,
+\`.codex/prompts/...\`, or \`.agents/skills/...\`, resolve those paths under
+\`${packageSourceRoot}\` unless the instruction explicitly says to use the
+consuming project's \`project/\`, \`prds/\`, \`plans/\`, \`designs/\`,
+\`research/\`, \`docs/\`, or \`modules/\` paths.
+`;
+}
+
+function buildPromptShim(relativePath, packagePath, packageSourceRoot) {
+	const commandName = path.basename(relativePath, ".md");
+	return `Use the packaged Agent Workflows slash prompt for \`${commandName}\`.
+
+Packaged source of truth:
+
+\`${packagePath}\`
+
+Read the packaged prompt and any skill it delegates to from
+\`${packageSourceRoot}\`, then run it with this request:
+
+$ARGUMENTS
+`;
+}
+
+function buildMarkdownShim(relativePath, packagePath, packageSourceRoot) {
+	const title = path.basename(relativePath, path.extname(relativePath));
+	return `# ${title}
+
+This local file is an Agent Workflows reference shim.
+
+Packaged source of truth:
+
+\`${packagePath}\`
+
+Read and use the packaged file instead of this shim. When that file references
+other reusable Agent Workflows files, resolve them under \`${packageSourceRoot}\`.
+Project-owned files such as \`project/\`, \`prds/\`, \`plans/\`, \`designs/\`,
+\`research/\`, \`docs/\`, and \`modules/\` remain local to this consuming
+workspace.
+`;
+}
+
+function extractFrontmatter(source) {
+	if (!source.startsWith("---\n")) return undefined;
+	const endIndex = source.indexOf("\n---", 4);
+	if (endIndex < 0) return undefined;
+	return `${source.slice(0, endIndex + 5).trim()}\n\n`;
+}
+
+function packageSourceRootReference(root) {
+	const localPackageRoot = path.join(root, packageLocalPath);
+	if (path.resolve(localPackageRoot) === packageRoot) {
+		return packageLocalPath;
+	}
+
+	const relativePackageRoot = path.relative(root, packageRoot);
+	if (
+		relativePackageRoot &&
+		!relativePackageRoot.startsWith("..") &&
+		!path.isAbsolute(relativePackageRoot)
+	) {
+		return relativePackageRoot;
+	}
+
+	return packageRoot;
+}
+
+function toPosixPath(filePath) {
+	return filePath.split(path.sep).join("/");
 }
 
 function mergePackageScripts(root) {
@@ -317,14 +453,14 @@ Usage:
   workflows check [--root <path>]
 
 Commands:
-  init       Copy workflow files into a developer project and create a manifest.
-  update     Refresh workflow-owned files from the installed package.
+  init       Write local workflow shims into a developer project and create a manifest.
+  update     Refresh workflow-owned shims from the installed package.
   dashboard  Start the packaged dashboard against the developer project.
   integrity  Run the packaged workspace integrity check against the project.
   check      Run package-provided workspace checks against the project.
 
 Agent command and skill loading:
-  Run workflows init once after installing in a new project.
-  Run workflows update after package upgrades or when lifecycle scripts are disabled.
-  Restart or reload active agent sessions after either command.`);
+  Run workflows init once after global install, or bunx workflows init for a project-local install.
+  Run workflows update after package upgrades, or bunx workflows update when lifecycle scripts are disabled.
+  Restart or reload active agent sessions after either command so they discover refreshed shims.`);
 }

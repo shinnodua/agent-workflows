@@ -61,14 +61,19 @@ data, and refresh workflow-owned files when the package version changes.
 Functional requirements:
 
 - `workflows init` creates the required workflow directories and copies reusable
-  agent guides, commands, skills, prompt shims, templates, roles, docs, scripts,
-  and workspace config into the current project.
+  local discovery shims for reusable agent guides, commands, skills, prompt
+  shims, templates, roles, docs, and `workflows.md` into the current project.
+- Local discovery shims reference the installed package as the source of truth
+  instead of copying full reusable file bodies into the consuming project.
+- `workspace.config.json` remains a local managed copy because workspace tooling
+  reads it as project configuration.
 - Every packaged command shim has a matching packaged skill source when the
   command delegates to `.agents/skills/<command>/SKILL.md`.
 - `workflows init` creates starter `project/` files only when they do not
   already exist.
 - `workflows init` records package version and managed files in a local manifest.
-- `workflows update` refreshes managed reusable files from the installed package.
+- `workflows update` refreshes managed reusable local shims from the installed
+  package.
 - `workflows update` does not overwrite project profile files or existing
   artifact content unless those files are explicitly managed by the manifest.
 - `workflows dashboard` starts the packaged dashboard with the target workspace
@@ -78,7 +83,11 @@ Functional requirements:
 - Package installation in an uninitialized project tells developers to run
   `workflows init` so source agents can load packaged commands and skills.
 - Developers can opt out of automatic lifecycle refresh with
-  `AGENT_WORKFLOWS_SKIP_AUTO_UPDATE=1` and run `workflows update` manually.
+  `AGENT_WORKFLOWS_SKIP_AUTO_UPDATE=1` and run `bunx workflows update`
+  manually.
+- Documentation and lifecycle messages must not assume a project-local
+  dev-dependency binary is available as bare `workflows` in an interactive
+  shell; use `bunx workflows ...` for consuming-project commands.
 
 Non-functional requirements:
 
@@ -132,11 +141,11 @@ output visible so developers can open the served URL.
 - Running `workflows dashboard --root <dir>` starts the dashboard with artifact
   discovery rooted at `<dir>`.
 - Installing or upgrading the package in an initialized project refreshes
-  workflow-owned commands, prompt shims, and skills automatically.
+  workflow-owned command, prompt, skill, and workflow shims automatically.
 - Package dry-run contents include a `SKILL.md` source for each command shim that
   delegates to `.agents/skills/`.
 - Developers have a documented manual recovery path with `workflows update` and
-  an explicit active-agent reload step.
+  `bunx workflows update`, plus an explicit active-agent reload step.
 - Package metadata exposes the `workflows` binary and includes files required at
   runtime.
 - Validation commands pass for root and dashboard changes.

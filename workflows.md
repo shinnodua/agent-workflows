@@ -15,12 +15,12 @@ bun add --dev @shinnodua/agent-workflows
 Initialize workflow files from the project root:
 
 ```sh
-workflows init
+bunx workflows init
 ```
 
 Restart or reload any active agent session after initialization so source agents
-can discover the copied `.codex/prompts/`, `.agents/skills/`, and `commands/`
-assets.
+can discover the local `.codex/prompts/`, `.agents/skills/`, `commands/`, and
+`workflows.md` shims.
 
 Fill the project profile files with guided setup:
 
@@ -34,11 +34,23 @@ available; run it manually if lifecycle scripts are disabled or
 `AGENT_WORKFLOWS_SKIP_AUTO_UPDATE=1` is set:
 
 ```sh
-workflows update
+bunx workflows update
 ```
 
 Restart or reload any active agent session after the refresh so it can discover
-updated commands and skills.
+updated command and skill shims.
+
+Initialized consuming workspaces use a hybrid source model:
+
+- Local files provide agent discovery shims for `.agents/skills/*/SKILL.md`,
+  `.codex/prompts/*.md`, `commands/*.md`, `AGENTS.md`, `workflows.md`, reusable
+  `roles/`, `templates/`, and setup docs.
+- Packaged files under the installed `@shinnodua/agent-workflows` package remain
+  the source of truth for reusable workflow behavior.
+- Project-owned files stay local: `project/`, `prds/`, `plans/`, `designs/`,
+  `research/`, `docs/`, `modules/`, and `workspace.config.json`.
+- `workflows update` refreshes local shims when commands, skills, or reusable
+  references are added, removed, or renamed.
 
 Clone an existing initialized workspace with submodules:
 
@@ -76,7 +88,7 @@ git submodule foreach 'git status --short'
 Run the local task-status dashboard against the current project:
 
 ```sh
-workflows dashboard
+bunx workflows dashboard
 ```
 
 Validate the local task-status dashboard:
@@ -90,7 +102,7 @@ bun run dashboard:build
 Validate workspace artifact metadata and relationships:
 
 ```sh
-bun run workspace:integrity
+bunx workflows integrity
 ```
 
 Run the complete workspace check locally. Lefthook runs this command before

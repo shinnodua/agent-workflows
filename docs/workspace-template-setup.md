@@ -72,7 +72,7 @@ bun add --dev @shinnodua/agent-workflows
 Initialize workflow files from the project root:
 
 ```sh
-workflows init
+bunx workflows init
 ```
 
 Then run the guided setup command to fill the project profile files:
@@ -81,26 +81,41 @@ Then run the guided setup command to fill the project profile files:
 /project-setup
 ```
 
-The command copies reusable workflow files, creates starter project profile files
-when they do not exist, and writes `.agent-workflows/manifest.json`.
+The command writes local discovery shims for reusable workflow files, creates
+starter project profile files when they do not exist, and writes
+`.agent-workflows/manifest.json`. The reusable source of truth stays in the
+installed package.
 
 Restart or reload any active agent session after `workflows init` so it can
-discover the copied `.codex/prompts/`, `.agents/skills/`, and `commands/`
-assets.
+discover the local `.codex/prompts/`, `.agents/skills/`, `commands/`, and
+`workflows.md` shims.
 
 When the package is installed or upgraded in an initialized project, package
 lifecycle scripts automatically run a best-effort refresh equivalent to:
 
 ```sh
-workflows update
+bunx workflows update
 ```
 
-The update command refreshes workflow-owned files and leaves project profile
+The update command refreshes workflow-owned shims and leaves project profile
 files, existing PRDs, plans, designs, research, docs, and submodules under
 developer control. If lifecycle scripts are disabled, or if you set
-`AGENT_WORKFLOWS_SKIP_AUTO_UPDATE=1`, run `workflows update` manually from the
-project root. Restart or reload any active agent session after the refresh so it
-can discover updated commands and skills.
+`AGENT_WORKFLOWS_SKIP_AUTO_UPDATE=1`, run `bunx workflows update` manually from
+the project root. Restart or reload any active agent session after the refresh
+so it can discover updated commands and skills.
+
+The local shims point back to the installed package for reusable behavior:
+
+- `.agents/skills/*/SKILL.md`
+- `.codex/prompts/*.md`
+- `commands/*.md`
+- `AGENTS.md`
+- `workflows.md`
+- reusable `roles/`, `templates/`, and setup docs
+
+Project-owned files remain local to the consuming workspace: `project/`, `prds/`,
+`plans/`, `designs/`, `research/`, `docs/`, `modules/`, and
+`workspace.config.json`.
 
 1. Replace `project/PROJECT.md` with the new project's purpose and ownership
    rules.
@@ -119,13 +134,13 @@ git submodule update --init --recursive
 6. Run the workspace validation:
 
 ```sh
-workflows check
+bunx workflows check
 ```
 
 7. Open the dashboard:
 
 ```sh
-workflows dashboard
+bunx workflows dashboard
 ```
 
 ## Agent Setup Checklist
