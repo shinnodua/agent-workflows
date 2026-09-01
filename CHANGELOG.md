@@ -1,5 +1,11 @@
 # agent-workflows
 
+## 0.1.3
+
+### Patch Changes
+
+- c3fb591: improve workspace setup
+
 ## 0.1.2
 
 ### Patch Changes
