@@ -1,5 +1,11 @@
 # agent-workflows
 
+## 0.1.4
+
+### Patch Changes
+
+- f915b04: Add meeting command
+
 ## 0.1.3
 
 ### Patch Changes
