@@ -35,6 +35,7 @@
 		"dashboard/vite.config.ts",
 		"designs/.gitkeep",
 		"docs",
+		"meeting-logs/.gitkeep",
 		"modules/.gitkeep",
 		"plans/.gitkeep",
 		"prds/.gitkeep",

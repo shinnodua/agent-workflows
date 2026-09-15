@@ -24,6 +24,7 @@ const managedPaths = [
 	"workflows.md",
 	"workspace.config.json",
 	".codex/prompts",
+	".agents/agents",
 	".agents/skills",
 	"commands",
 	"docs/workspace-template-setup.md",
@@ -41,6 +42,7 @@ const scaffoldOnlyPaths = [
 	"plans/.gitkeep",
 	"designs/.gitkeep",
 	"research/.gitkeep",
+	"meeting-logs/.gitkeep",
 	"docs/.gitkeep",
 	"modules/.gitkeep",
 ];
@@ -83,7 +85,7 @@ function initWorkspace(root) {
 		"Next: use /project-setup or $project-setup to configure this project's workflow profile.",
 	);
 	console.log(
-		"Restart or reload any active agent session so it can discover the local command and skill shims.",
+		"Restart or reload any active agent session so it can discover the local custom agent, command, and skill shims.",
 	);
 }
 
@@ -98,7 +100,7 @@ function updateWorkspace(root) {
 		"Project profile files and existing artifacts were left unchanged.",
 	);
 	console.log(
-		"Restart or reload any active agent session so it can discover refreshed command and skill shims.",
+		"Restart or reload any active agent session so it can discover refreshed custom agent, command, and skill shims.",
 	);
 }
 
@@ -213,6 +215,9 @@ function shouldWriteReferenceShim(relativePath) {
 	if (normalized.startsWith(".codex/prompts/") && normalized.endsWith(".md")) {
 		return true;
 	}
+	if (normalized.startsWith(".agents/agents/") && normalized.endsWith(".md")) {
+		return true;
+	}
 	if (
 		normalized.startsWith(".agents/skills/") &&
 		normalized.endsWith("SKILL.md")
@@ -245,6 +250,10 @@ function buildReferenceShim(root, relativePath) {
 		return buildPromptShim(normalized, packagePath, packageSourceRoot);
 	}
 
+	if (normalized.startsWith(".agents/agents/")) {
+		return buildAgentShim(normalized, packagePath, packageSourceRoot, source);
+	}
+
 	return buildMarkdownShim(normalized, packagePath, packageSourceRoot);
 }
 
@@ -262,10 +271,11 @@ Packaged source of truth:
 Read the packaged source completely and follow it as this skill's instructions.
 When the packaged source references reusable files such as \`AGENTS.md\`,
 \`workflows.md\`, \`roles/...\`, \`templates/...\`, \`commands/...\`,
-\`.codex/prompts/...\`, or \`.agents/skills/...\`, resolve those paths under
+\`.codex/prompts/...\`, \`.agents/agents/...\`, or \`.agents/skills/...\`,
+resolve those paths under
 \`${packageSourceRoot}\` unless the instruction explicitly says to use the
 consuming project's \`project/\`, \`prds/\`, \`plans/\`, \`designs/\`,
-\`research/\`, \`docs/\`, or \`modules/\` paths.
+\`research/\`, \`meeting-logs/\`, \`docs/\`, or \`modules/\` paths.
 `;
 }
 
@@ -284,6 +294,28 @@ $ARGUMENTS
 `;
 }
 
+function buildAgentShim(relativePath, packagePath, packageSourceRoot, source) {
+	const frontmatter = extractFrontmatter(source);
+	const title = path.basename(path.dirname(relativePath));
+	return `${frontmatter ?? ""}# ${title}
+
+This local file is an Agent Workflows custom-agent discovery shim.
+
+Packaged source of truth:
+
+\`${packagePath}\`
+
+Read the packaged custom-agent definition completely and follow it as this
+agent's instructions. When the packaged source references reusable files such as
+\`AGENTS.md\`, \`workflows.md\`, \`roles/...\`, \`templates/...\`,
+\`commands/...\`, \`.codex/prompts/...\`, \`.agents/agents/...\`, or
+\`.agents/skills/...\`, resolve those paths under \`${packageSourceRoot}\`
+unless the instruction explicitly says to use the consuming project's
+\`project/\`, \`prds/\`, \`plans/\`, \`designs/\`, \`research/\`,
+\`meeting-logs/\`, \`docs/\`, or \`modules/\` paths.
+`;
+}
+
 function buildMarkdownShim(relativePath, packagePath, packageSourceRoot) {
 	const title = path.basename(relativePath, path.extname(relativePath));
 	return `# ${title}
@@ -297,8 +329,8 @@ Packaged source of truth:
 Read and use the packaged file instead of this shim. When that file references
 other reusable Agent Workflows files, resolve them under \`${packageSourceRoot}\`.
 Project-owned files such as \`project/\`, \`prds/\`, \`plans/\`, \`designs/\`,
-\`research/\`, \`docs/\`, and \`modules/\` remain local to this consuming
-workspace.
+\`research/\`, \`meeting-logs/\`, \`docs/\`, and \`modules/\` remain local to
+this consuming workspace.
 `;
 }
 

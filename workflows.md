@@ -19,8 +19,8 @@ bunx workflows init
 ```
 
 Restart or reload any active agent session after initialization so source agents
-can discover the local `.codex/prompts/`, `.agents/skills/`, `commands/`, and
-`workflows.md` shims.
+can discover the local `.agents/agents/`, `.codex/prompts/`, `.agents/skills/`,
+`commands/`, and `workflows.md` shims.
 
 Fill the project profile files with guided setup:
 
@@ -38,17 +38,18 @@ bunx workflows update
 ```
 
 Restart or reload any active agent session after the refresh so it can discover
-updated command and skill shims.
+updated custom agent, command, and skill shims.
 
 Initialized consuming workspaces use a hybrid source model:
 
-- Local files provide agent discovery shims for `.agents/skills/*/SKILL.md`,
-  `.codex/prompts/*.md`, `commands/*.md`, `AGENTS.md`, `workflows.md`, reusable
-  `roles/`, `templates/`, and setup docs.
+- Local files provide agent discovery shims for `.agents/agents/*/agent.md`,
+  `.agents/skills/*/SKILL.md`, `.codex/prompts/*.md`, `commands/*.md`,
+  `AGENTS.md`, `workflows.md`, reusable `roles/`, `templates/`, and setup docs.
 - Packaged files under the installed `@shinnodua/agent-workflows` package remain
   the source of truth for reusable workflow behavior.
 - Project-owned files stay local: `project/`, `prds/`, `plans/`, `designs/`,
-  `research/`, `docs/`, `modules/`, and `workspace.config.json`.
+  `research/`, `meeting-logs/`, `docs/`, `modules/`, and
+  `workspace.config.json`.
 - `workflows update` refreshes local shims when commands, skills, or reusable
   references are added, removed, or renamed.
 
@@ -275,6 +276,24 @@ should only delegate to the corresponding skill with `$ARGUMENTS`.
   - Ask the developer clarifying questions before changing the PRD.
   - After the developer answers, update the PRD according to those answers.
   - Do not create implementation plans or edit code until the PRD is approved.
+- `$sprint-meeting <prd-id>`, `sprint-meeting <prd-id>`, or `/sprint-meeting <prd-id>`
+  - Skill: `.agents/skills/sprint-meeting/SKILL.md`.
+  - Codex slash prompt: `.codex/prompts/sprint-meeting.md`.
+  - Command spec: `commands/sprint-meeting.md`.
+  - Run a visible, time-boxed PRD review meeting with all workspace role
+    sub-agents: Project Manager, Tech Lead, UI/UX Designer, Backend Developer,
+    and Frontend Developer.
+  - Require every sub-agent to read the PRD and related documents before
+    discussing requirements, risks, unanswered questions, and PRD improvements.
+  - Keep active agent discussion to 5 minutes or less, excluding time spent
+    waiting for developer answers.
+  - Show meeting progress, agent findings, and human-only questions in the
+    developer's active chat window.
+  - Assign every question to the role agents that can answer it or to
+    `@developer` when human input is required.
+  - Update the PRD after the meeting and save the question-and-answer record
+    under `meeting-logs/` with a filename based on the PRD ID.
+  - Do not approve the PRD, create plans, or edit product code.
 - `$approve-prd <prd-id>`, `approve-prd <prd-id>`, or `/approve-prd <prd-id>`
   - Skill: `.agents/skills/approve-prd/SKILL.md`.
   - Codex slash prompt: `.codex/prompts/approve-prd.md`.

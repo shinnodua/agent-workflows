@@ -81,14 +81,20 @@ Then run the guided setup command to fill the project profile files:
 /project-setup
 ```
 
+After a PRD exists, run a role-agent review meeting from the active agent chat:
+
+```sh
+/sprint-meeting <prd-id>
+```
+
 The command writes local discovery shims for reusable workflow files, creates
 starter project profile files when they do not exist, and writes
 `.agent-workflows/manifest.json`. The reusable source of truth stays in the
 installed package.
 
 Restart or reload any active agent session after `workflows init` so it can
-discover the local `.codex/prompts/`, `.agents/skills/`, `commands/`, and
-`workflows.md` shims.
+discover the local `.agents/agents/`, `.codex/prompts/`, `.agents/skills/`,
+`commands/`, and `workflows.md` shims.
 
 When the package is installed or upgraded in an initialized project, package
 lifecycle scripts automatically run a best-effort refresh equivalent to:
@@ -98,15 +104,17 @@ bunx workflows update
 ```
 
 The update command refreshes workflow-owned shims and leaves project profile
-files, existing PRDs, plans, designs, research, docs, and submodules under
-developer control. If lifecycle scripts are disabled, or if you set
+files, existing PRDs, plans, designs, research, meeting logs, docs, and
+submodules under developer control. If lifecycle scripts are disabled, or if you
+set
 `AGENT_WORKFLOWS_SKIP_AUTO_UPDATE=1`, run `bunx workflows update` manually from
 the project root. Restart or reload any active agent session after the refresh
-so it can discover updated commands and skills.
+so it can discover updated custom agents, commands, and skills.
 
 The local shims point back to the installed package for reusable behavior:
 
 - `.agents/skills/*/SKILL.md`
+- `.agents/agents/*/agent.md`
 - `.codex/prompts/*.md`
 - `commands/*.md`
 - `AGENTS.md`
@@ -114,7 +122,7 @@ The local shims point back to the installed package for reusable behavior:
 - reusable `roles/`, `templates/`, and setup docs
 
 Project-owned files remain local to the consuming workspace: `project/`, `prds/`,
-`plans/`, `designs/`, `research/`, `docs/`, `modules/`, and
+`plans/`, `designs/`, `research/`, `meeting-logs/`, `docs/`, `modules/`, and
 `workspace.config.json`.
 
 1. Replace `project/PROJECT.md` with the new project's purpose and ownership

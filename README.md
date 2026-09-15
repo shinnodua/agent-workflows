@@ -35,8 +35,8 @@ commands and skills locally while the source of truth stays in the installed
 package.
 
 Restart or reload any active agent session after `workflows init`. Source agents
-discover commands and skills from local `.codex/prompts/`, `.agents/skills/`,
-`commands/`, and `workflows.md` shims.
+discover custom agents, commands, and skills from local `.agents/agents/`,
+`.codex/prompts/`, `.agents/skills/`, `commands/`, and `workflows.md` shims.
 
 Then fill the project profile with the guided command:
 
@@ -44,11 +44,18 @@ Then fill the project profile with the guided command:
 /project-setup
 ```
 
+After a PRD exists, run a role-agent review meeting from the active agent chat:
+
+```sh
+/sprint-meeting <prd-id>
+```
+
 ## Commands
 
 ```sh
 bunx workflows init
 project-setup
+sprint-meeting
 bunx workflows dashboard
 bunx workflows update
 bunx workflows integrity
@@ -58,6 +65,8 @@ bunx workflows check
 - `workflows init` sets up a developer project to follow the workflow.
 - `project-setup` guides the developer through completing the `project/` profile
   files step by step.
+- `sprint-meeting` runs a time-boxed role-agent PRD review meeting and saves the
+  record under `meeting-logs/`.
 - `workflows dashboard` starts the packaged dashboard and reads artifact data
   from the developer project root.
 - `workflows update` refreshes workflow-owned shims after upgrading this package
@@ -67,9 +76,9 @@ bunx workflows check
 
 After package installation or upgrade, initialized projects automatically run a
 best-effort `workflows update` so source agents can load the current packaged
-commands and skills. Set `AGENT_WORKFLOWS_SKIP_AUTO_UPDATE=1` to skip that
-lifecycle refresh, then run `bunx workflows update` manually from the project
-root. Restart or reload any active agent session after either path.
+custom agents, commands, and skills. Set `AGENT_WORKFLOWS_SKIP_AUTO_UPDATE=1` to
+skip that lifecycle refresh, then run `bunx workflows update` manually from the
+project root. Restart or reload any active agent session after either path.
 
 ## Local Shims
 
@@ -77,6 +86,7 @@ Agent Workflows keeps reusable source files in the installed package and writes
 small local shims for agent discovery:
 
 - `.agents/skills/*/SKILL.md`
+- `.agents/agents/*/agent.md`
 - `.codex/prompts/*.md`
 - `commands/*.md`
 - `AGENTS.md`
@@ -86,8 +96,8 @@ small local shims for agent discovery:
 Those shims point back to
 `node_modules/@shinnodua/agent-workflows/...` for project-local installs, or to
 the actual package install path for global installs. Project-owned files such as
-`project/`, `prds/`, `plans/`, `designs/`, `research/`, `docs/`, and `modules/`
-remain local to the consuming workspace.
+`project/`, `prds/`, `plans/`, `designs/`, `research/`, `meeting-logs/`,
+`docs/`, and `modules/` remain local to the consuming workspace.
 
 ## Build And Release
 
