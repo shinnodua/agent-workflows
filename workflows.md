@@ -285,6 +285,9 @@ should only delegate to the corresponding skill with `$ARGUMENTS`.
     and Frontend Developer.
   - Require every sub-agent to read the PRD and related documents before
     discussing requirements, risks, unanswered questions, and PRD improvements.
+  - Run bounded multi-round discussion: agents can ask questions, other agents
+    can answer, question authors review answers, and unresolved items may get
+    follow-up rounds before escalation.
   - Keep active agent discussion to 5 minutes or less, excluding time spent
     waiting for developer answers.
   - Show meeting progress, agent findings, and human-only questions in the
@@ -293,6 +296,8 @@ should only delegate to the corresponding skill with `$ARGUMENTS`.
     `@developer` when human input is required.
   - Update the PRD after the meeting and save the question-and-answer record
     under `meeting-logs/` with a filename based on the PRD ID.
+  - Save logs using `templates/meeting-log-template.md` so every source agent
+    produces the same meeting-log structure.
   - Do not approve the PRD, create plans, or edit product code.
 - `$approve-prd <prd-id>`, `approve-prd <prd-id>`, or `/approve-prd <prd-id>`
   - Skill: `.agents/skills/approve-prd/SKILL.md`.

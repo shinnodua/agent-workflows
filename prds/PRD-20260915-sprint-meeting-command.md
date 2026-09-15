@@ -41,10 +41,15 @@ planning.
 - Spawn every workspace role sub-agent for the meeting.
 - Require sub-agents to read the PRD and related artifacts.
 - Keep active meeting discussion within 5 minutes.
+- Allow multiple routed agent-answer rounds so agents can ask questions, answer
+  each other, review answers, and run bounded follow-ups before escalating to
+  the developer.
 - Show meeting progress and questions in the developer's chat window.
 - Ask the developer only questions that agents cannot responsibly answer.
 - Update the PRD after the meeting.
 - Save a durable question-and-answer meeting log under `meeting-logs/`.
+- Provide a reusable meeting-log template so every agent runtime saves the same
+  meeting-log structure.
 
 ## Non-Goals
 
@@ -73,9 +78,17 @@ Functional requirements:
 - The command shows meeting messages in the developer's active chat.
 - Each question names the agents or developer expected to answer it.
 - Agents answer questions within their role knowledge.
+- The meeting chair runs a bounded multi-round loop for agent-answerable
+  questions.
+- The agent that asked a question reviews the answer as accepted,
+  needs-follow-up, or human-required.
+- The command allows up to two follow-up rounds per question unless the
+  5-minute active meeting budget expires first.
 - Human-only questions are asked to the developer and recorded.
 - The command updates the PRD after the meeting.
 - The command saves a meeting log under `meeting-logs/` named from the PRD ID.
+- The command reads and fills `templates/meeting-log-template.md`.
+- Meeting logs preserve all template sections, using `None` for empty sections.
 
 Non-functional requirements:
 
@@ -93,11 +106,18 @@ Non-functional requirements:
 3. The command announces the meeting roster in chat.
 4. The command spawns all role sub-agents.
 5. Sub-agents return findings, questions, answers, and proposed PRD updates.
-6. The chair consolidates duplicate questions.
-7. The chair asks any human-only questions in chat and waits for answers.
-8. The chair updates the PRD.
-9. The chair writes a meeting log under `meeting-logs/`.
-10. The chair reports the PRD path, meeting log path, and unresolved questions.
+6. The chair consolidates duplicate questions and routes agent-answerable
+   questions to relevant agents.
+7. Responding agents answer the routed questions.
+8. Question authors review answers and either accept them, request bounded
+   follow-up, or mark the question human-required.
+9. The chair repeats routed answer rounds until no agent-answerable questions
+   remain, only human-only questions remain, or the 5-minute active budget is
+   reached.
+10. The chair asks any human-only questions in chat and waits for answers.
+11. The chair updates the PRD.
+12. The chair writes a meeting log under `meeting-logs/`.
+13. The chair reports the PRD path, meeting log path, and unresolved questions.
 
 ## Affected Platforms
 
@@ -118,7 +138,9 @@ Non-functional requirements:
 Meeting progress should be visible in the developer's chat window. Developer
 questions should be concise, batched when possible, and explicitly assigned with
 `@developer`. Agent-answerable questions should mention the relevant role-agent
-names so agents know which questions they should answer.
+names so agents know which questions they should answer. Multi-round discussion
+summaries should show routed questions, answers, answer review outcomes, and
+follow-ups without flooding the chat with every internal detail.
 
 ## Acceptance Criteria
 
@@ -127,6 +149,8 @@ names so agents know which questions they should answer.
 - `.codex/prompts/sprint-meeting.md` exists.
 - `commands/sprint-meeting.md` exists.
 - `meeting-logs/.gitkeep` exists.
+- `templates/meeting-log-template.md` exists.
+- The sprint-meeting skill requires the meeting-log template before saving logs.
 - Workflow documentation lists the new command.
 - Package init/update manages the new command files and meeting-log scaffold.
 - Workspace validation passes.
@@ -137,6 +161,8 @@ names so agents know which questions they should answer.
   requirements rather than one proprietary API.
 - Human questions can exceed 5 minutes if the developer is away; the time box
   applies to active agent discussion and pauses while waiting for the developer.
+- Multi-round agent discussion can sprawl, so each question is limited to two
+  follow-up rounds and the global active meeting budget remains authoritative.
 
 ## Open Questions
 
