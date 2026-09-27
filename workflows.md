@@ -458,6 +458,14 @@ the current backend repository, rely on shared contracts from the configured
 shared/core repositories, and do not redefine shared types, interfaces, or
 validation schemas in the service.
 
+For every affected submodule, read its `agentGuide` from
+`project/repositories.json` and discover local `SKILL.md` files under that
+repository's `.agents/skills/` and `.codex/skills/` before editing. Read and
+apply the skills relevant to the assigned work and any skill named by the
+developer or agent guide. Include this instruction in each implementation
+sub-agent handoff as well as serial implementation. Reading the agent guide
+does not load the skill instructions automatically.
+
 When implementing web or app frontend work, first read and adopt
 `roles/frontend-developer.md`. In that role, modify only frontend files within
 the current frontend repository, rely on shared contracts from

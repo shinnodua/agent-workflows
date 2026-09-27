@@ -66,6 +66,7 @@ Workspace setup, PRD and planning commands, research, design, dashboard structur
 - For workspace dependency changes, use the root skill at [.agents/skills/package-installation/SKILL.md](.agents/skills/package-installation/SKILL.md).
 - For dashboard frontend implementation, read [dashboard/AGENTS.md](dashboard/AGENTS.md) and use the relevant dashboard-local skills under `dashboard/.agents/skills/` before editing `dashboard/` code.
 - Read the relevant submodule `agentGuide` from `project/repositories.json` before editing inside a submodule.
+- Before implementing inside a submodule, discover its local skills (for example, `rg --files --hidden modules/<submodule>/.agents/skills modules/<submodule>/.codex/skills -g SKILL.md` where those directories exist). Read and follow every skill relevant to the assigned work, including any skill named by the developer or the submodule's `agentGuide`. Do this for serial work and in every implementation sub-agent handoff; do not assume reading `AGENTS.md` loads the skills.
 - Use `rg` or `rg --files` for searching across the workspace.
 - Preserve user changes in the root repo and in every submodule. Never reset or discard work unless explicitly requested.
 - Do not commit code or workflow changes. The developer will commit changes.
