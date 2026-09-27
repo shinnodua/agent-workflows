@@ -1,5 +1,11 @@
 # agent-workflows
 
+## 0.1.6
+
+### Patch Changes
+
+- f58d1a4: Fix agent rules
+
 ## 0.1.5
 
 ### Patch Changes
