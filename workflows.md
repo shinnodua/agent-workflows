@@ -155,7 +155,7 @@ flowchart LR
     prd[Create draft PRD]
     clarifyPrd{PRD needs clarification?}
     updatePrd[Update PRD from answers]
-    needsDesign{Requires UI/UX design?}
+    needsDesign{Add optional UI/UX design?}
     approvePrd[Approve PRD]
   end
 
@@ -195,18 +195,22 @@ flowchart LR
 
   frontendReady((Frontend stage ready))
   frontendDone((Frontend stage complete))
+  meetingChoice{Run optional sprint meeting?}
+  sprintMeeting[Review and improve PRD with role agents]
 
   finish([Report changed repos, validation, and submodule pointer status])
 
   request --> research
   request --> prd
   research --> prd
-  prd --> clarifyPrd
-  clarifyPrd -->|Yes| updatePrd --> clarifyPrd
-  clarifyPrd -->|No| needsDesign
+  prd --> needsDesign
   needsDesign -->|Yes - status: need-design| design
-  design --> designDone --> approvePrd
-  needsDesign -->|No| approvePrd
+  design --> designDone --> clarifyPrd
+  needsDesign -->|No| clarifyPrd
+  clarifyPrd -->|Yes| updatePrd --> clarifyPrd
+  clarifyPrd -->|No| meetingChoice
+  meetingChoice -->|Yes| sprintMeeting --> approvePrd
+  meetingChoice -->|No| approvePrd
   approvePrd -->|Status: approved| rootPlan
   rootPlan --> subPlans --> clarifyPlan
   clarifyPlan -->|Yes| updatePlan --> clarifyPlan
@@ -219,6 +223,8 @@ flowchart LR
   frontendDone --> finish
 ```
 
+[Explore the interactive workflow diagram](.archify/workflow-workspace-delivery-20260929-093455/workspace-delivery.html).
+
 ### Role Responsibilities By Step
 
 | Step | Primary role | Supporting roles | Artifact or output |
@@ -226,9 +232,10 @@ flowchart LR
 | Developer request | Developer | Project Manager, Tech Lead | Initial scope, constraints, and explicit exceptions to the normal workflow |
 | Optional research brief | Tech Lead + Project Manager | UI/UX Designer when experience research is needed | `research/RESEARCH-*.md` |
 | Draft PRD | Project Manager | Developer | `prds/PRD-*.md` with user value, scope, requirements, and acceptance criteria (status: `draft`) |
-| PRD clarification | Project Manager | Developer | Updated PRD with resolved ambiguity |
-| PRD approval / design routing | Developer | Project Manager | If design needed: PRD status `need-design`. If ready for planning (from `draft` or `design-done`): PRD status `approved` |
-| Design artifact | UI/UX Designer | Project Manager, Tech Lead | Open Design artifact or Markdown design spec, PRD design backlink, and PRD status updated to `design-done` |
+| Optional UI/UX design | UI/UX Designer | Project Manager, Tech Lead | Starts from the draft PRD when selected; design artifact and PRD status updated to `design-done` before review |
+| PRD review and clarification | Project Manager | Developer | Updated PRD with resolved ambiguity, starting from `draft` or `design-done` |
+| Optional sprint meeting during PRD review | Project Manager, Tech Lead, UI/UX Designer, Backend Developer, Frontend Developer | Developer for product decisions | Improved PRD and meeting record in `meeting-logs/`; may be skipped before approval |
+| PRD approval | Developer | Project Manager | PRD status `approved` after review, from `draft` or `design-done` |
 | Root overview plan | Tech Lead | Project Manager, UI/UX Designer | `plans/PLAN-*.md` with architecture, ownership, sequence, validation, and risks |
 | Submodule detail plans | Tech Lead via sub-agents | Core, Backend, Frontend roles | `modules/*/plans/*.md` for only affected repositories |
 | Plan clarification | Tech Lead | Developer, implementation roles | Updated root or submodule plan |
@@ -267,6 +274,12 @@ should only delegate to the corresponding skill with `$ARGUMENTS`.
   - Store PRDs in `prds/`.
   - Give every PRD a stable `PRD ID`.
   - Set initial PRD status to `draft`.
+  - After creating the draft, offer optional UI/UX design with
+    `$create-design <design request>`. PRD review begins after design is complete
+    or immediately when design is skipped.
+  - During PRD review, suggest `$sprint-meeting <prd-id>` as an optional
+    role-agent review. The developer may skip it and proceed to
+    `$approve-prd <prd-id>` after reviewing the PRD.
   - Do not create implementation plans or edit code until the PRD is approved.
 - `$griling-prd <prd-id-or-path>`, `griling-prd <prd-id-or-path>`, or `/griling-prd <prd-id-or-path>`
   - Skill: `.agents/skills/griling-prd/SKILL.md`.
@@ -280,6 +293,8 @@ should only delegate to the corresponding skill with `$ARGUMENTS`.
   - Skill: `.agents/skills/sprint-meeting/SKILL.md`.
   - Codex slash prompt: `.codex/prompts/sprint-meeting.md`.
   - Command spec: `commands/sprint-meeting.md`.
+  - Optional during PRD review, after the draft PRD is created and any chosen
+    UI/UX design is complete; skipping it does not block approval.
   - Run a visible, time-boxed PRD review meeting with all workspace role
     sub-agents: Project Manager, Tech Lead, UI/UX Designer, Backend Developer,
     and Frontend Developer.
@@ -304,9 +319,8 @@ should only delegate to the corresponding skill with `$ARGUMENTS`.
   - Codex slash prompt: `.codex/prompts/approve-prd.md`.
   - Command spec: `commands/approve-prd.md`.
   - If the PRD contains open questions, automatically invoke the `griling-prd` skill to require the developer to answer all open questions before proceeding.
-  - If the PRD status is `draft`, ask the developer whether to move to UI/UX design (`$create-design`) or proceed directly to create plans.
-  - If design is selected, update the PRD status to `need-design` and instruct the developer to run `$create-design`.
-  - If planning is selected or if the PRD is already in `design-done` status, mark the PRD status as `approved` and set approval metadata.
+  - Optional UI/UX design begins from the draft PRD, before the PRD review phase.
+  - After review, approve a PRD in `draft` or `design-done` status and create plans. If its status is `need-design`, finish or explicitly skip the selected design before approval.
   - After approval, automatically create the root overview plan and any required submodule plans using `templates/plan-template.md`.
   - Plans created from an approved PRD must link back to that PRD.
   - Plans must carry forward relevant PRD research sources and summarize the

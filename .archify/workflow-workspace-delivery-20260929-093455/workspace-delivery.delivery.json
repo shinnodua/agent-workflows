@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "28981fad-b27f-44d9-976d-54444d42380a",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/shinnodua/Projects/agent-workflows/.archify/workflow-workspace-delivery-20260929-093455/candidate.json",
+  "output": "/Users/shinnodua/Projects/agent-workflows/.archify/workflow-workspace-delivery-20260929-093455/workspace-delivery.html",
+  "specification": {
+    "sha256": "179e8cc978e0a091dc3242a03549983f6db268372fb191993eb7a8ff26fad738",
+    "bytes": 5117
+  },
+  "artifact": {
+    "sha256": "0222b502d025958c8dd201735e23f8a274e8265ee98845a4831a2bfd23ae0297",
+    "bytes": 766071
+  }
+}

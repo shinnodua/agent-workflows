@@ -43,20 +43,8 @@ instead.
 9. If answered importance questions change requirements, revise the PRD before
    approving it and carry those answers into the approval and planning context.
 10. Check the PRD's current `Status`:
-   - **If `Status` is `draft`**:
-     - Before changing status or creating plans, ask the developer whether to move to UI/UX design (`$design-ui-ux`) or proceed directly to create implementation plans.
-     - If the developer chooses **Design**:
-       - Update PRD metadata:
-         - `Status`: `need-design`
-         - `Last updated`: current date
-       - Stop here and do not create plans or mark the PRD as approved.
-       - Instruct the developer to run `$design-ui-ux <design request>` next.
-     - If the developer chooses **Create Plan**:
-       - Proceed to step 11 to mark the PRD `approved` and generate plans.
-   - **If `Status` is `design-done`**:
-     - Proceed directly to step 11 to approve the PRD and generate plans.
-   - **If `Status` is `need-design`**:
-     - Prompt the developer whether to continue to design with `$design-ui-ux` or approve the PRD and proceed directly to plan creation.
+   - **If `Status` is `draft` or `design-done`**: After PRD review and resolution of open questions, proceed to step 11 to approve the PRD and generate plans. Optional UI/UX design starts from the draft PRD before this approval command; do not route a reviewed draft into design here.
+   - **If `Status` is `need-design`**: Finish the selected design with `$create-design <design request>` before approval, unless the developer explicitly chooses to skip it. If skipped, set `Status` back to `draft`, update `Last updated`, and continue to step 11.
 11. Update PRD metadata when approving:
     - `Status`: `approved`
     - `Approved on`: current date

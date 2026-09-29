@@ -62,9 +62,12 @@ instead.
 12. Save the PRD in `prds/<prd-id-lowercase>.md`.
 13. Set `Status` to `draft`.
 14. Do not create plans or edit product code.
-15. Ask the developer to review the PRD and approve it with `$approve-prd <prd-id>` or `approve-prd <prd-id>`.
+15. After creating the draft, offer optional UI/UX design with `$create-design <design request>`. If chosen, design starts from this draft PRD; if skipped, PRD review can begin immediately.
+16. For the PRD review phase, suggest optional `$sprint-meeting <prd-id>` after any chosen design is complete. Make clear the developer may skip the meeting and review the PRD directly.
+17. Give the developer the approval command, `$approve-prd <prd-id>` or `approve-prd <prd-id>`, for when review is complete.
 
 ## Output
 
 Report the PRD ID, file path, status, and any open questions that need developer
-review.
+review. Show optional design, optional sprint meeting during review, and PRD
+approval in that order.

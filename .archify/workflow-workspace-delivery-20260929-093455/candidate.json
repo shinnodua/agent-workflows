@@ -1,0 +1,57 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Workspace delivery workflow",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "output": ".archify/workflow-workspace-delivery-20260929-093455/workspace-delivery.html",
+    "repository": {
+      "url": "git@github.com:shinnodua/agent-workflows.git",
+      "revision": "f58d1a40cff5e771c236e7be0a4f43b503c2f8c6",
+      "link_mode": "local-only"
+    }
+  },
+  "lanes": [
+    { "id": "design", "label": "UI/UX Designer" },
+    { "id": "product", "label": "Developer + Project Manager" },
+    { "id": "review", "label": "Optional role review" },
+    { "id": "planning", "label": "Tech Lead + Developer" },
+    { "id": "delivery", "label": "Repository implementers" }
+  ],
+  "phases": [
+    { "id": "requirements", "label": "Requirements", "fromCol": 0, "toCol": 2 },
+    { "id": "approval", "label": "Approval + planning", "fromCol": 3, "toCol": 4 },
+    { "id": "implementation", "label": "Implementation", "fromCol": 5, "toCol": 5 }
+  ],
+  "nodes": [
+    { "id": "request", "lane": "product", "col": 0, "type": "external", "label": "Developer request", "sublabel": "feature or task", "width": 134, "sources": [{ "path": "workflows.md", "line": 139, "end_line": 142 }] },
+    { "id": "draft", "lane": "product", "col": 1, "type": "database", "label": "Draft PRD", "sublabel": "requirements source", "width": 132, "sources": [{ "path": "workflows.md", "line": 154, "end_line": 159 }] },
+    { "id": "prdReview", "lane": "product", "col": 2, "type": "security", "label": "Review PRD", "sublabel": "resolve open questions", "width": 140, "sources": [{ "path": "workflows.md", "line": 204, "end_line": 209 }] },
+    { "id": "approvePrd", "lane": "product", "col": 3, "type": "security", "label": "Approve PRD", "sublabel": "planning gate", "width": 130, "sources": [{ "path": "workflows.md", "line": 206, "end_line": 210 }] },
+    { "id": "meeting", "lane": "review", "col": 2, "type": "messagebus", "label": "Sprint meeting", "sublabel": "optional review step", "width": 164, "sources": [{ "path": "workflows.md", "line": 279, "end_line": 301 }] },
+    { "id": "design", "lane": "design", "col": 2, "type": "frontend", "label": "UI/UX design", "sublabel": "optional after draft", "width": 148, "sources": [{ "path": "workflows.md", "line": 161, "end_line": 165 }] },
+    { "id": "rootPlan", "lane": "planning", "col": 3, "type": "database", "label": "Root overview plan", "sublabel": "architecture + sequence", "width": 156, "sources": [{ "path": "workflows.md", "line": 167, "end_line": 173 }] },
+    { "id": "subPlans", "lane": "planning", "col": 4, "type": "database", "label": "Submodule plans", "sublabel": "only affected repos", "width": 150, "sources": [{ "path": "workflows.md", "line": 405, "end_line": 420 }] },
+    { "id": "approvePlan", "lane": "planning", "col": 5, "type": "security", "label": "Approve root plan", "sublabel": "implementation gate", "width": 154, "sources": [{ "path": "workflows.md", "line": 314, "end_line": 324 }] },
+    { "id": "delivery", "lane": "delivery", "col": 5, "type": "backend", "label": "Implement + validate", "sublabel": "shared → API → frontend", "width": 164, "sources": [{ "path": "workflows.md", "line": 430, "end_line": 453 }] }
+  ],
+  "edges": [
+    { "id": "request-draft", "from": "request", "to": "draft" },
+    { "id": "draft-review", "from": "draft", "to": "prdReview", "label": "skip design" },
+    { "id": "draft-design", "from": "draft", "to": "design", "label": "optional design", "variant": "dashed", "role": "branch" },
+    { "id": "design-review", "from": "design", "to": "prdReview", "label": "design done" },
+    { "id": "review-approval", "from": "prdReview", "to": "approvePrd", "label": "ready" },
+    { "id": "review-meeting", "from": "prdReview", "to": "meeting", "label": "optional meeting", "variant": "dashed", "role": "branch" },
+    { "id": "meeting-approval", "from": "meeting", "to": "approvePrd", "label": "reviewed PRD" },
+    { "id": "approved-plan", "from": "approvePrd", "to": "rootPlan", "label": "approved" },
+    { "id": "plan-details", "from": "rootPlan", "to": "subPlans" },
+    { "id": "details-approval", "from": "subPlans", "to": "approvePlan", "label": "questions resolved" },
+    { "id": "approval-delivery", "from": "approvePlan", "to": "delivery", "label": "approved" }
+  ],
+  "cards": [
+    { "dot": "violet", "title": "PRD choices", "items": ["Optional UI/UX design starts from the draft PRD, before review.", "During PRD review, an optional sprint meeting can improve the PRD and record decisions.", "Either optional step may be skipped before approval."] },
+    { "dot": "cyan", "title": "Repository delivery", "items": ["Implement affected shared/core and backend work before dependent frontends.", "Reassess safe frontend parallelism after each validated stage.", "Read each submodule agent guide and relevant local skills before editing."] },
+    { "dot": "emerald", "title": "Completion", "items": ["Validate each changed repository and report changed submodules and pointer status.", "The developer owns commits."] }
+  ]
+}
