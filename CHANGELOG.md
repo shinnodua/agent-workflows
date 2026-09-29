@@ -1,5 +1,11 @@
 # agent-workflows
 
+## 0.1.7
+
+### Patch Changes
+
+- d617522: update workflows
+
 ## 0.1.6
 
 ### Patch Changes
