@@ -23,6 +23,7 @@ The existing pre-commit hook runs workspace validation but does not inspect stag
 ## Requirements
 
 - Check staged regular files for private key blocks, common provider tokens, credential assignments, personal email addresses, and local home directory paths.
+- Recognize credential assignments in JSON and environment style files, and treat only exact placeholder values as safe.
 - Report the file, line, and finding category without echoing sensitive values.
 - Allow documented example domains and placeholders.
 - Exit nonzero on findings and run from the existing pre-commit hook.

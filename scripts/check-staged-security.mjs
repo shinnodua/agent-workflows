@@ -32,7 +32,7 @@ const unsafeName =
 	/(?:^|\/)(?:\.env(?:\.[^/]+)?|\.npmrc|id_(?:rsa|dsa|ecdsa|ed25519)|[^/]+\.(?:pem|p12|pfx|key))$/i;
 const exampleName = /(?:^|[._-])(?:example|sample|template)(?:$|[._-])/i;
 const safeValue =
-	/^(?:example|sample|placeholder|dummy|test|fake|changeme|your[_-]?[a-z_-]*|\$\{|<|\*+)/i;
+	/^(?:example|sample|placeholder|dummy|test|fake|changeme|your[_-]?[a-z_-]*|\$\{[^}]+\}|<[^>]+>|\*+)$/i;
 const patterns = [
 	[
 		"private key",
@@ -51,11 +51,13 @@ const patterns = [
 	],
 ];
 const assignment =
-	/\b(?:api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret|password|passwd|secret[_-]?key|private[_-]?key)\b\s*[=:]\s*["'`]?([^\s"'`,;#]+)/i;
+	/\b(?:api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret|password|passwd|secret[_-]?key|private[_-]?key|database[_-]?url)\b["']?\s*[=:]\s*["'`]?([^\s"'`,;#]+)/i;
 const email = /\b[A-Z0-9._%+-]+@([A-Z0-9.-]+\.[A-Z]{2,})\b/gi;
+const dynamicValue =
+	/^(?:process\.env\.|import\.meta\.env\.|Deno\.env\.|env\.|os\.getenv\(|getenv\()/i;
 
 for (const path of staged) {
-	if (unsafeName.test(path) && !exampleName.test(path)) {
+	if (unsafeName.test(path) && !exampleName.test(path.split("/").at(-1))) {
 		findings.push(`${path}: sensitive filename`);
 	}
 	const content = git(["show", `:${path}`]);
@@ -66,7 +68,11 @@ for (const path of staged) {
 			if (pattern.test(line)) findings.push(`${path}:${index + 1}: ${label}`);
 		}
 		const assigned = line.match(assignment);
-		if (assigned && !safeValue.test(assigned[1])) {
+		if (
+			assigned &&
+			!safeValue.test(assigned[1]) &&
+			!dynamicValue.test(assigned[1])
+		) {
 			findings.push(`${path}:${index + 1}: credential assignment`);
 		}
 		for (const match of line.matchAll(email)) {

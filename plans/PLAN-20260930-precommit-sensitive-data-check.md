@@ -7,7 +7,7 @@
 
 ## Implementation
 
-Add a dependency-free staged-file scanner under `scripts/`. Run it as the first Lefthook pre-commit command, retain the workspace check, and document installation and limitations in the README. Keep all changes in the root repository.
+Add a dependency-free staged-file scanner under `scripts/`. Run it as the first Lefthook pre-commit command, retain the workspace check, and document installation and limitations in the README. Cover JSON credentials, exact placeholders, and sensitive filenames with integration tests. Keep all changes in the root repository.
 
 ## Validation
 

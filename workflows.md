@@ -117,8 +117,8 @@ every commit and blocks the commit when any check fails:
 bun run workspace:check
 ```
 
-The GitHub Actions workflow is manual-only. Run it from the workflow page with
-`workflow_dispatch` when remote validation is needed.
+GitHub Actions runs package validation on pull requests. Local commit hooks run
+the staged security scan and workspace checks before each commit once installed.
 
 This command treats malformed structured metadata and duplicate artifact IDs as
 errors. Legacy metadata and references into unavailable submodule worktrees are
