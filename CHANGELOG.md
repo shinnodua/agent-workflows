@@ -1,5 +1,11 @@
 # agent-workflows
 
+## 0.1.8
+
+### Patch Changes
+
+- 3def559: Public release
+
 ## 0.1.7
 
 ### Patch Changes
