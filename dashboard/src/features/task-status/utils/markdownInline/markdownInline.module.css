@@ -1,0 +1,11 @@
+@reference "../../../../styles.css";
+
+.inlineCode {
+	@apply rounded-md border-[2px] border-black bg-neo-yellow px-1 font-black;
+	overflow-wrap: anywhere;
+}
+
+.link {
+	@apply font-black underline decoration-[3px] underline-offset-2;
+	overflow-wrap: anywhere;
+}

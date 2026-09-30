@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dashboard Taste UI"
+  short_description: "Polish dashboard interfaces"
+  default_prompt: "Use $taste-ui to refine this dashboard interface."

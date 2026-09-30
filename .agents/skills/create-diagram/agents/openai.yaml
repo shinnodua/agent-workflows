@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Diagram"
+  short_description: "Create role-aware Mermaid diagrams for docs"
+  default_prompt: "Use $create-diagram to create a clear Mermaid diagram for this workflow."

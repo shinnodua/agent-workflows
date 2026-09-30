@@ -1,0 +1,25 @@
+@reference "../../../../styles.css";
+
+.card {
+	@apply p-4;
+}
+
+.header {
+	@apply mb-3 flex items-center justify-between gap-3;
+}
+
+.title {
+	@apply text-2xl font-black;
+}
+
+.countBadge {
+	@apply rounded-full border-[3px] border-black bg-neo-lime px-3 py-1 text-xs font-black uppercase;
+}
+
+.grid {
+	@apply grid gap-2 md:grid-cols-2;
+}
+
+.empty {
+	@apply rounded-xl border-[3px] border-black bg-background p-3 text-sm font-bold;
+}

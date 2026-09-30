@@ -1,0 +1,134 @@
+:root {
+	--color-background: #f6f4ee;
+	--color-text: #1c2430;
+	--color-surface: #ffffff;
+	--color-surface-yellow: #fff1a8;
+	--color-surface-lime: #d8f99d;
+	--color-surface-blue: #bfe4ff;
+	--color-surface-pink: #ffd0df;
+	--color-surface-red: #ff9aa8;
+	--color-border: #1c2430;
+	--color-muted: #64748b;
+}
+
+.aw-card {
+	border: 2px solid var(--color-border);
+	border-radius: 8px;
+	box-shadow: 4px 4px 0 var(--color-border);
+	background: var(--color-surface);
+}
+
+.aw-card--white {
+	background: var(--color-surface);
+}
+
+.aw-card--yellow {
+	background: var(--color-surface-yellow);
+}
+
+.aw-card--lime {
+	background: var(--color-surface-lime);
+}
+
+.aw-card--blue {
+	background: var(--color-surface-blue);
+}
+
+.aw-card--pink {
+	background: var(--color-surface-pink);
+}
+
+.aw-card--red {
+	background: var(--color-surface-red);
+}
+
+.aw-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
+	border: 2px solid var(--color-border);
+	border-radius: 8px;
+	box-shadow: 2px 2px 0 var(--color-border);
+	font-weight: 800;
+	cursor: pointer;
+	transition:
+		transform 120ms ease,
+		box-shadow 120ms ease;
+}
+
+.aw-button:hover {
+	transform: translate(1px, 1px);
+	box-shadow: 1px 1px 0 var(--color-border);
+}
+
+.aw-button--sm {
+	min-height: 2rem;
+	padding: 0.35rem 0.75rem;
+	font-size: 0.875rem;
+}
+
+.aw-button--md {
+	min-height: 2.5rem;
+	padding: 0.5rem 1rem;
+	font-size: 0.95rem;
+}
+
+.aw-button--icon {
+	width: 2.5rem;
+	height: 2.5rem;
+	padding: 0;
+}
+
+.aw-button--white {
+	background: var(--color-surface);
+	color: var(--color-text);
+}
+
+.aw-button--yellow {
+	background: var(--color-surface-yellow);
+	color: var(--color-text);
+}
+
+.aw-button--lime {
+	background: var(--color-surface-lime);
+	color: var(--color-text);
+}
+
+.aw-button--blue {
+	background: var(--color-surface-blue);
+	color: var(--color-text);
+}
+
+.aw-button--pink {
+	background: var(--color-surface-pink);
+	color: var(--color-text);
+}
+
+.aw-button--red {
+	background: var(--color-surface-red);
+	color: var(--color-text);
+}
+
+.aw-field {
+	display: grid;
+	gap: 0.4rem;
+	font-weight: 800;
+}
+
+.aw-field__label {
+	font-size: 0.8rem;
+	color: var(--color-muted);
+}
+
+.aw-input {
+	width: 100%;
+	min-height: 2.5rem;
+	box-sizing: border-box;
+	border: 2px solid var(--color-border);
+	border-radius: 8px;
+	background: #ffffff;
+	color: var(--color-text);
+	padding: 0.55rem 0.75rem;
+	font: inherit;
+}

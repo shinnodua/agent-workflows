@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dashboard Design System"
+  short_description: "Apply dashboard UI system rules"
+  default_prompt: "Use $design-system-guideline to update this dashboard UI."

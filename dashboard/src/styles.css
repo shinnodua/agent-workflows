@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@theme {
+	--color-background: #f6f4ee;
+	--color-surface: #ffffff;
+	--color-neo-yellow: #fff1a8;
+	--color-neo-lime: #d8f99d;
+	--color-neo-blue: #bfe4ff;
+	--color-neo-pink: #ffd0df;
+	--color-neo-red: #ff9aa8;
+	--color-neo-orange: #ffc46b;
+	--shadow-neo-active: 2px 2px 0 #1c2430;
+	--shadow-neo-lg: 6px 6px 0 #1c2430;
+}
+@source "../src";
+
+html {
+	scroll-behavior: smooth;
+}
+
+body {
+	min-width: 920px;
+	margin: 0;
+	background: var(--color-background);
+	color: var(--color-text);
+	overflow-x: auto;
+}
+
+button,
+input,
+select {
+	font: inherit;
+}
+
+#root {
+	min-height: 100vh;
+}
+
+.overflow-wrap-anywhere {
+	overflow-wrap: anywhere;
+}

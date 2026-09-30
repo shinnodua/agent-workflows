@@ -1,0 +1,72 @@
+{
+	"repositories": [
+		{
+			"id": "example-core",
+			"name": "example-core",
+			"path": "modules/example-core",
+			"url": "git@github.com:example/example-core.git",
+			"purpose": "Shared packages, contracts, and reusable core logic",
+			"scope": [
+				"shared types",
+				"shared utilities",
+				"design tokens or component primitives"
+			],
+			"platforms": ["shared", "core"],
+			"agentGuide": "modules/example-core/AGENTS.md",
+			"artifactDirectories": {
+				"plans": "modules/example-core/plans",
+				"designs": "modules/example-core/designs",
+				"research": "modules/example-core/research",
+				"docs": "modules/example-core/docs"
+			},
+			"codeScanDirectories": ["modules/example-core/src"],
+			"validation": ["bun run check"]
+		},
+		{
+			"id": "example-service",
+			"name": "example-service",
+			"path": "modules/example-service",
+			"url": "git@github.com:example/example-service.git",
+			"purpose": "Backend API and service runtime",
+			"scope": [
+				"API routes",
+				"persistence",
+				"background jobs",
+				"deployment configuration"
+			],
+			"platforms": ["backend", "service"],
+			"agentGuide": "modules/example-service/AGENTS.md",
+			"artifactDirectories": {
+				"plans": "modules/example-service/plans",
+				"designs": "modules/example-service/designs",
+				"research": "modules/example-service/research",
+				"docs": "modules/example-service/docs"
+			},
+			"codeScanDirectories": ["modules/example-service/src"],
+			"validation": ["bun run check"]
+		},
+		{
+			"id": "example-web",
+			"name": "example-web",
+			"path": "modules/example-web",
+			"url": "git@github.com:example/example-web.git",
+			"purpose": "Web or app frontend",
+			"scope": [
+				"frontend UI",
+				"client state",
+				"API integration",
+				"user workflows"
+			],
+			"platforms": ["frontend", "web"],
+			"agentGuide": "modules/example-web/AGENTS.md",
+			"artifactDirectories": {
+				"plans": "modules/example-web/plans",
+				"designs": "modules/example-web/designs",
+				"research": "modules/example-web/research",
+				"docs": "modules/example-web/docs"
+			},
+			"codeScanDirectories": ["modules/example-web/src"],
+			"validation": ["bun run check"]
+		}
+	]
+}

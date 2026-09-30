@@ -1,0 +1,53 @@
+@reference "../../../../styles.css";
+
+.sidebar {
+	@apply sticky top-4 left-4 z-20 self-start max-h-[calc(100vh-2rem)] overflow-auto;
+}
+
+.card {
+	@apply p-4;
+}
+
+.search {
+	@apply mb-4;
+}
+
+.nav {
+	@apply grid gap-2;
+}
+
+.navGroup {
+	@apply grid gap-2;
+}
+
+.item {
+	@apply flex items-center justify-between gap-3 rounded-xl border-[3px] border-black px-3 py-2 font-black transition-transform hover:-translate-y-0.5;
+}
+
+.submenu {
+	@apply ml-4 grid gap-2 border-l-[3px] border-black pl-3;
+}
+
+.submenuItem {
+	@apply flex items-center justify-between gap-3 rounded-xl border-[3px] border-black px-3 py-2 text-sm font-black transition-transform hover:-translate-y-0.5;
+}
+
+.itemActive {
+	@apply bg-neo-yellow shadow-neo-active;
+}
+
+.itemInactive {
+	@apply bg-surface;
+}
+
+.itemLabel {
+	@apply flex items-center gap-2;
+}
+
+.itemIcon {
+	@apply size-4;
+}
+
+.itemCount {
+	@apply text-sm;
+}

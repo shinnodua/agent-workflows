@@ -1,0 +1,4 @@
+interface:
+  display_name: "Approve Plan"
+  short_description: "Approve a plan and start implementation"
+  default_prompt: "Use $approve-plan to approve this plan and start the required implementation sequence."

@@ -1,0 +1,97 @@
+@reference "../../../../styles.css";
+
+.sectionHeader {
+	@apply mb-3 flex items-center gap-2;
+}
+
+.sectionIcon {
+	@apply size-5;
+}
+
+.sectionTitle {
+	@apply text-2xl font-black;
+}
+
+.taskGrid {
+	@apply grid gap-4;
+}
+
+.emptyCard {
+	@apply p-5;
+}
+
+.emptyTitle {
+	@apply font-black;
+}
+
+.emptyCopy {
+	@apply mt-1 text-sm font-bold text-black/60;
+}
+
+.taskCard {
+	@apply p-4;
+}
+
+.columns {
+	@apply mt-4 grid gap-2 md:grid-cols-4;
+}
+
+.header {
+	@apply grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start;
+}
+
+.headerMain {
+	@apply min-w-0;
+}
+
+.meta {
+	@apply flex flex-wrap items-center gap-2;
+}
+
+.artifactCount {
+	@apply rounded-full border-[3px] border-black bg-surface px-3 py-1 text-xs font-black uppercase;
+}
+
+.title {
+	@apply mt-3 text-xl font-black leading-tight;
+}
+
+.description {
+	@apply mt-2 w-full text-sm font-bold leading-relaxed text-black/70;
+}
+
+.key {
+	@apply mt-1 break-all text-sm font-bold text-black/60;
+}
+
+.updated {
+	@apply inline-flex w-fit items-center gap-2 text-sm font-black lg:justify-self-end;
+}
+
+.updatedIcon {
+	@apply size-4;
+}
+
+.column {
+	@apply min-h-24 rounded-xl border-[3px] border-black bg-background p-3;
+}
+
+.columnHeader {
+	@apply flex items-center justify-between gap-2;
+}
+
+.columnLabel {
+	@apply text-xs font-black uppercase;
+}
+
+.columnItems {
+	@apply mt-2 flex flex-col gap-2;
+}
+
+.artifactButton {
+	@apply block w-full rounded-lg bg-white px-2 py-1 text-left text-sm font-black underline decoration-[3px] underline-offset-2;
+}
+
+.missing {
+	@apply text-sm font-bold text-black/50;
+}

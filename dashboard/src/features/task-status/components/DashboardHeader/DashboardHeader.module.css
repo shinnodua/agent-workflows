@@ -1,0 +1,41 @@
+@reference "../../../../styles.css";
+
+.header {
+	@apply grid gap-5 xl:grid-cols-[1fr_320px] xl:items-end;
+}
+
+.eyebrow {
+	@apply mb-3 inline-flex items-center gap-2 rounded-full border-[3px] border-black bg-neo-blue px-4 py-2 font-black;
+}
+
+.icon {
+	@apply size-5;
+}
+
+.title {
+	@apply max-w-4xl text-4xl font-black leading-none sm:text-5xl;
+}
+
+.copy {
+	@apply mt-3 max-w-3xl text-base font-bold text-black/70 sm:text-lg;
+}
+
+.summaryCard {
+	@apply p-4;
+}
+
+.summaryLabel {
+	@apply text-sm font-black uppercase;
+}
+
+.summaryCount {
+	@apply mt-2 text-2xl font-black;
+}
+
+.summaryTime {
+	@apply mt-1 text-sm font-bold;
+}
+
+.summaryWarning {
+	@apply m-0 text-xs font-black text-neo-pink;
+}

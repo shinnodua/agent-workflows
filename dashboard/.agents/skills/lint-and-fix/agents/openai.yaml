@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dashboard Lint And Fix"
+  short_description: "Verify dashboard changes"
+  default_prompt: "Use $lint-and-fix to verify this dashboard change."
