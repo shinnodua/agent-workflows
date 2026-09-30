@@ -6,6 +6,10 @@ This package provides reusable agent rules, skills, command shims,
 PRD/plan/research templates, role definitions, workspace integrity checks, and a
 local dashboard for browsing Markdown artifacts.
 
+> **Personal project:** I built Agent Workflows for my own use and continue to
+> shape it around my workflow. If you have ideas for making it clearer or more
+> useful, I welcome suggestions and contributions.
+
 ![Workspace delivery workflow](docs/workflows.png)
 
 Explore the [interactive workspace delivery workflow](.archify/workflow-workspace-delivery-20260929-093455/workspace-delivery.html).
@@ -78,6 +82,25 @@ bunx workflows check
 - `workflows update` refreshes workflow-owned shims after upgrading this package.
 - `workflows integrity` validates workspace artifact metadata.
 - `workflows check` runs package-provided workspace checks.
+
+## Commit Security Check
+
+Install the repository's Git hook once after cloning:
+
+```sh
+bun install
+bun run hooks:install
+```
+
+Before each commit, Lefthook scans staged files for private keys, common service
+tokens, credential assignments, personal email addresses, local home paths, and
+sensitive filenames. A finding blocks the commit and reports its location
+without printing the value. The existing workspace checks run after this scan.
+Run the scan directly with `bun run security:staged`.
+
+The scan uses patterns and cannot guarantee that every secret or private detail
+is caught. Review staged changes before committing. Example addresses under
+`example.com`, `example.org`, and `example.net` are allowed.
 
 Package installation leaves existing workspace files unchanged. After upgrading,
 run `bunx workflows update` from the project root to refresh the local shims, or
