@@ -41,6 +41,26 @@ in the workspace root `meeting-logs/` directory with this filename pattern:
 | `@workspace-backend-developer` | `roles/backend-developer.md` | `<participated/skipped>` | `<notes>` |
 | `@workspace-frontend-developer` | `roles/frontend-developer.md` | `<participated/skipped>` | `<notes>` |
 
+## Design Review
+
+| Agent | Design reviewed | UI/UX contribution and rationale | Affected flow, screen, or state | Disposition |
+| --- | --- | --- | --- | --- |
+| `@workspace-project-manager` | `<artifact or PRD UX sections>` | `<improvement or "No change needed" with reason>` | `<location or "None">` | `<accepted/rejected/follow-up/no change>` |
+| `@workspace-tech-lead` | `<artifact or PRD UX sections>` | `<improvement or "No change needed" with reason>` | `<location or "None">` | `<accepted/rejected/follow-up/no change>` |
+| `@workspace-ui-ux-designer` | `<artifact or PRD UX sections>` | `<improvement or "No change needed" with reason>` | `<location or "None">` | `<accepted/rejected/follow-up/no change>` |
+| `@workspace-backend-developer` | `<artifact or PRD UX sections>` | `<improvement or "No change needed" with reason>` | `<location or "None">` | `<accepted/rejected/follow-up/no change>` |
+| `@workspace-frontend-developer` | `<artifact or PRD UX sections>` | `<improvement or "No change needed" with reason>` | `<location or "None">` | `<accepted/rejected/follow-up/no change>` |
+
+### Design Synthesis
+
+- Accepted improvements: `<summary or "None">`
+- Rejected suggestions and reasons: `<summary or "None">`
+- Unresolved design decisions: `<summary or "None">`
+
+| Design artifact | Accepted change or follow-up | Update status | Owner |
+| --- | --- | --- | --- |
+| `<path or "None">` | `<specific change or "None">` | `<updated/follow-up/not applicable>` | `<agent or "None">` |
+
 ## Chat Timeline
 
 Record concise user-visible meeting messages in chronological order.

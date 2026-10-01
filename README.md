@@ -60,19 +60,36 @@ After a PRD exists, run a role-agent review meeting from the active agent chat:
 /sprint-meeting <prd-id>
 ```
 
+To let the agent continue through the full feature workflow after you start a
+feature request, enable auto mode:
+
+```sh
+bunx workflows auto on
+```
+
+Check or change it later with `bunx workflows auto status`, `off`, or `toggle`,
+or use `/auto-mode on|off|toggle|status` in the agent chat. Auto mode is off by
+default and is saved in `.agent-workflows/metadata.json`. It runs research,
+PRD, design, sprint meeting, PRD and plan approvals, implementation, and
+validation without routine approval prompts. The agent still asks for decisions
+only the developer can answer.
+
 ## Commands
 
 ```sh
 bunx workflows init
+auto-mode on|off|toggle|status
 project-setup
 sprint-meeting
 bunx workflows dashboard
 bunx workflows update
 bunx workflows integrity
 bunx workflows check
+bunx workflows auto on|off|toggle|status
 ```
 
 - `workflows init` sets up a developer project to follow the workflow.
+- `auto-mode` and `workflows auto` control workspace-local automatic progression.
 - `project-setup` guides the developer through completing the `project/` profile
   files step by step.
 - `sprint-meeting` runs a time-boxed role-agent PRD review meeting and saves the

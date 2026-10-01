@@ -1,0 +1,4 @@
+interface:
+  display_name: "Auto Mode"
+  short_description: "Toggle automatic workflow progression"
+  default_prompt: "Use $auto-mode to show or change this workspace's auto mode."

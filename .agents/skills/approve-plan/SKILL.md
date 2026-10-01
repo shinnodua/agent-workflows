@@ -36,15 +36,21 @@ instead.
    linked research briefs that materially affect implementation. Carry the
    relevant findings into each platform implementation step.
 6. Check the root plan and any linked submodule plans for open questions (specifically under `Open Questions` or unresolved technical planning decisions).
-7. If there ARE open questions in the root plan or linked submodule plans:
-   - Invoke and follow the `griling-plan` skill (`.agents/skills/griling-plan/SKILL.md`).
-   - Require the developer to answer all queued questions one at a time before the plan can be approved.
-   - Do not approve the plan or begin implementation until every open question is answered and resolved.
-   - Update the plan(s) with the developer's answers, resolving the open questions.
+7. If the root plan or linked submodule plans have open questions, resolve them
+   before approval:
+   - In manual mode, follow `griling-plan` (`.agents/skills/griling-plan/SKILL.md`)
+     and wait for the developer's answers.
+   - In auto mode, resolve agent-answerable questions from the approved PRD,
+     research, design, and plans. Ask only human-only questions and wait for
+     those answers.
+   - Update the affected plans. Do not approve or implement while a
+     decision-critical question remains open.
 8. Update root plan metadata:
    - `Status`: `approved`
    - `Approved on`: current date
    - `Approval command`: `$approve-plan <plan-id>`
+   - In auto mode, record `Approved by: auto-mode (developer-enabled)` and
+     `Approval command: $auto-mode on`.
 9. Implement in dependency-safe stages according to `project/workflows.json`. Before each stage, assess the remaining affected repositories/platforms and decide which can run in parallel.
    Re-run this assessment every time a stage completes, because newly implemented contracts, APIs, generated outputs, or migrations may unblock later parallel work. For example, implement shared/core contracts first when other platforms depend on them; after shared validation passes, reassess whether frontend platforms can run in parallel.
 10. Parallel implementation for a stage is allowed only when every platform in that stage can be implemented against stable contracts and disjoint file ownership without requiring another platform's unimplemented local changes. Treat a platform as not ready for the current parallel stage when:
@@ -65,8 +71,12 @@ instead.
     - Before implementing backend/service work, read and adopt `roles/backend-developer.md`. Modify only files in backend repositories, importing shared contracts from shared repositories.
     - Before implementing frontend work, read and adopt `roles/frontend-developer.md`. Modify only files in frontend repositories, importing shared contracts and using backend APIs.
 13. After each serial platform stage or parallel sub-agent stage finishes, validate the changed repositories using their `validation` commands from `project/repositories.json`, then decide whether any remaining platforms are now parallel-safe. If so, continue with a parallel stage. If not, continue with the next unblocked serial platform.
-14. After finishing one stage, stop and ask the developer whether to continue to the next stage or stop.
-15. If continuing and the next stage depends on newly changed local packages or APIs, ask whether to link local packages/use local code or depend on deployed/published packages or services.
+14. After finishing one stage, ask the developer whether to continue in manual
+    mode. In auto mode, continue to the next ready stage after validation passes.
+15. If the next stage depends on newly changed local packages or APIs, ask the
+    developer whether to use local or published dependencies in manual mode. In
+    auto mode, use validated local code when available; ask only if the choice
+    cannot be inferred or changes product or rollout intent.
 16. Do not commit changes.
 
 ## Output

@@ -51,6 +51,9 @@ If the client intercepts slash commands, use `$research` or `research` instead.
     or planning work. Use `draft` only when material unknowns remain.
 11. Do not create PRDs, create plans, or edit product code unless the developer
     explicitly asks for that as a separate step.
+    When auto mode is enabled for a developer-initiated feature request, the
+    active request authorizes continuation to the PRD stage under
+    `.agents/skills/auto-mode/SKILL.md`.
 
 ## Output
 

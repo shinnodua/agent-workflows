@@ -1,4 +1,4 @@
 interface:
   display_name: "Sprint Meeting"
-  short_description: "Run a role-agent PRD review meeting"
+  short_description: "Review a PRD and UI/UX with every role"
   default_prompt: "Use $sprint-meeting to run a role-agent review meeting for this PRD."

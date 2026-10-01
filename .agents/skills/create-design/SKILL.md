@@ -99,6 +99,8 @@ edits, or code review unless the request includes a UI/UX/design decision.
       Design), and a one-line purpose.
     - Inform the developer that the PRD is now in `design-done` status and can
       be approved with `$approve-prd <prd-id>` to move to the planning stage.
+    - In auto mode, continue to the sprint meeting instead of asking the
+      developer to invoke PRD approval.
 
 ## Open Design Workflow
 
@@ -183,11 +185,13 @@ When the design is based on a PRD:
 6. Update PRD metadata:
    - `Status`: `design-done`
    - `Last updated`: current date
-7. Preserve the PRD's requirement text and existing approval fields (the developer will run `$approve-prd` to approve the PRD and move to planning).
+7. Preserve the PRD's requirement text and existing approval fields. In manual
+   mode, the developer later runs `$approve-prd`. In auto mode, the agent
+   advances after the sprint meeting using auto-mode approval authority.
 
 ## Output
 
 Report the design artifact path or Open Design artifact created, key design
 decisions, assumptions, open questions, the PRD backlink and `design-done` status
 update, and the recommended next step (run `$approve-prd <prd-id>` to approve the
-PRD and move to the planning stage).
+PRD in manual mode, or continue to the sprint meeting in auto mode).

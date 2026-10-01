@@ -35,11 +35,14 @@ instead.
    check `research/` for directly relevant briefs and include only strong
    matches.
 7. Check the PRD for open questions (specifically under the `Open Questions` section or any unresolved decision-critical requirement gaps).
-8. If there ARE open questions in the PRD:
-   - Invoke and follow the `griling-prd` skill (`.agents/skills/griling-prd/SKILL.md`).
-   - Require the developer to answer all queued questions one at a time before the PRD can be approved.
-   - Do not approve the PRD or generate plans until every open question is answered and resolved.
-   - Update the PRD with the developer's answers, resolving the open questions.
+8. If there are open questions in the PRD, resolve them before approval:
+   - In manual mode, follow `griling-prd` (`.agents/skills/griling-prd/SKILL.md`)
+     and wait for the developer's answers.
+   - In auto mode, resolve agent-answerable questions using the PRD, related
+     artifacts, and role knowledge. Ask the developer only for human-only
+     decisions and wait for those answers.
+   - Update the PRD with the resolutions. Do not approve it or generate plans
+     while a decision-critical question remains open.
 9. If answered importance questions change requirements, revise the PRD before
    approving it and carry those answers into the approval and planning context.
 10. Check the PRD's current `Status`:
@@ -50,6 +53,8 @@ instead.
     - `Approved on`: current date
     - `Approval command`: `$approve-prd <prd-id>`
     - `Last updated`: current date
+    - In auto mode, record `Approved by: auto-mode (developer-enabled)` and
+      `Approval command: $auto-mode on` instead of a direct developer approval.
 12. Reflect answered importance questions in the root and submodule plans as
     architecture decisions, constraints, sequencing, risks, validation
     expectations, or open questions as appropriate.
@@ -78,7 +83,10 @@ instead.
 22. Link every submodule plan from the root overview plan with a short responsibility summary.
 23. Set all new plan statuses to `draft`.
 24. Do not edit code.
-25. Ask the developer to review the plans and approve the root plan with `$approve-plan <plan-id>` or `approve-plan <plan-id>`.
+25. In manual mode, ask the developer to review the plans and approve the root
+    plan with `$approve-plan <plan-id>` or `approve-plan <plan-id>`. In auto
+    mode, review plan completeness and continue to plan approval without this
+    routine prompt.
 
 ## Output
 

@@ -102,6 +102,9 @@ After each dependency stage, stop and ask the developer whether to continue to
 the next stage or stop. If continuing and the next stage depends on newly
 changed local packages or APIs, ask whether to link local packages/use local
 code or depend on deployed/published packages or services.
+When workspace auto mode is enabled for the active feature, continue after each
+validated stage and use available validated local dependencies. Ask only when
+the dependency decision requires developer intent or information.
 
 ### Validation
 

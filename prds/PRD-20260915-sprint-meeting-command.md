@@ -7,7 +7,7 @@
 - Type: `prd`
 - Status: `implemented`
 - Created: `2026-09-15`
-- Last updated: `2026-09-15`
+- Last updated: `2026-10-01`
 - Owner: `project-manager`
 - Related artifact IDs: `[]`
 - Source request: `Create a command, /sprint-meeting <prd-id>, this will invoke all subagent, spawn all subagents. subagents should read the prd and related document and then discuss about the prd based on their knowledge, help improve the prd and answer all the questions, allow to leave the questions that agent can't answer only when a human needs to answer. The meeting should finish in 5 minutes or below. Update PRD after done the meeting, save all question and answer from subagent into meeting-logs folder naming based on PRD. Meeting messages should show in the developer chat window, and questions should mention all agents that can answer or developer.`
@@ -40,6 +40,9 @@ planning.
   `sprint-meeting` forms.
 - Spawn every workspace role sub-agent for the meeting.
 - Require sub-agents to read the PRD and related artifacts.
+- Require every participant to review linked design artifacts, or the PRD's UX
+  flows and notes when no design artifact exists, and contribute actionable UI/UX
+  feedback from their role's perspective.
 - Keep active meeting discussion within 5 minutes.
 - Allow multiple routed agent-answer rounds so agents can ask questions, answer
   each other, review answers, and run bounded follow-ups before escalating to
@@ -72,6 +75,16 @@ Functional requirements:
 - The command finds the matching PRD by ID or path.
 - The command reads the PRD and directly related research, design, plan, and doc
   artifacts.
+- Every role sub-agent reviews the available design and contributes a concrete
+  UI/UX improvement or explicitly records that no change is needed, with a
+  reason. The review covers user flows, states, accessibility, feasibility, and
+  consistency where relevant to the role.
+- The UI/UX Designer synthesizes the cross-role design feedback; the chair
+  records accepted improvements and unresolved decisions in the meeting log and
+  updates the PRD's UX requirements and acceptance criteria accordingly.
+- When a linked design artifact can be edited within the meeting scope, accepted
+  design improvements are reflected there; otherwise the log records the exact
+  proposed change and artifact for follow-up.
 - The command spawns `workspace-project-manager`, `workspace-tech-lead`,
   `workspace-ui-ux-designer`, `workspace-backend-developer`, and
   `workspace-frontend-developer`.
@@ -105,7 +118,8 @@ Non-functional requirements:
 2. The command resolves the PRD and related documents.
 3. The command announces the meeting roster in chat.
 4. The command spawns all role sub-agents.
-5. Sub-agents return findings, questions, answers, and proposed PRD updates.
+5. Sub-agents return findings, design review contributions, questions, answers,
+   and proposed PRD updates.
 6. The chair consolidates duplicate questions and routes agent-answerable
    questions to relevant agents.
 7. Responding agents answer the routed questions.
@@ -115,7 +129,8 @@ Non-functional requirements:
    remain, only human-only questions remain, or the 5-minute active budget is
    reached.
 10. The chair asks any human-only questions in chat and waits for answers.
-11. The chair updates the PRD.
+11. The designer synthesizes design feedback and the chair updates the PRD and
+    any editable linked design artifact with accepted changes.
 12. The chair writes a meeting log under `meeting-logs/`.
 13. The chair reports the PRD path, meeting log path, and unresolved questions.
 
@@ -141,6 +156,8 @@ questions should be concise, batched when possible, and explicitly assigned with
 names so agents know which questions they should answer. Multi-round discussion
 summaries should show routed questions, answers, answer review outcomes, and
 follow-ups without flooding the chat with every internal detail.
+The summary should identify each participant's UI/UX contribution and the
+agreed design improvements.
 
 ## Acceptance Criteria
 
@@ -151,6 +168,10 @@ follow-ups without flooding the chat with every internal detail.
 - `meeting-logs/.gitkeep` exists.
 - `templates/meeting-log-template.md` exists.
 - The sprint-meeting skill requires the meeting-log template before saving logs.
+- The skill requires a design review contribution from all five role agents and
+  design synthesis before closing the meeting.
+- The meeting-log template records each role's design feedback, the disposition
+  of each proposed change, and any design artifact update or follow-up.
 - Workflow documentation lists the new command.
 - Package init/update manages the new command files and meeting-log scaffold.
 - Workspace validation passes.

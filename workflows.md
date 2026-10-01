@@ -53,7 +53,8 @@ Initialized consuming workspaces use a hybrid source model:
   the source of truth for reusable workflow behavior.
 - Project-owned files stay local: `project/`, `prds/`, `plans/`, `designs/`,
   `research/`, `meeting-logs/`, `docs/`, `modules/`, and
-  `workspace.config.json`.
+`workspace.config.json`. Workspace-local auto mode is stored separately in
+`.agent-workflows/metadata.json` and is preserved by `workflows update`.
 - `workflows update` refreshes local shims when commands, skills, or reusable
   references are added, removed, or renamed.
 
@@ -140,10 +141,32 @@ When applying the workspace to a new project, replace `project/` and
 `.gitmodules`, then run `bun run workspace:check`. See
 [`docs/workspace-template-setup.md`](docs/workspace-template-setup.md).
 
+## Auto Mode
+
+Auto mode defaults to off. Use `$auto-mode on|off|toggle|status` in an agent chat
+or `workflows auto on|off|toggle|status [--root <path>]` in a shell. The setting
+lives in `.agent-workflows/metadata.json`, so `workflows update` does not reset
+it. The agent checks this metadata at the start of each developer-initiated
+feature or implementation request and follows `.agents/skills/auto-mode/SKILL.md`
+when enabled.
+
+With auto mode on, the agent advances through research → PRD → design → sprint
+meeting → PRD approval → root and affected submodule plans → plan approval →
+implementation and validation. Design is recorded as not applicable when there
+is no user-facing surface. The agent resolves questions it can answer and asks
+the developer only for decisions that require developer intent or information.
+The agent records auto-mode authority in approval metadata. A failed check or
+unanswered human-only question blocks dependent progression. Auto mode does not
+start unsolicited work or authorize commits, pushes, releases, deployment, or
+production changes.
+
+With auto mode off, the existing manual approval and stage prompts apply.
+
 ## PRD And Planning Workflow
 
-Every feature or implementation task must start with a saved PRD before planning
-or code changes begin. The PRD is the source of truth for user requirements.
+Every feature or implementation task needs a saved PRD before planning or code
+changes begin. Auto mode creates a research brief first. The PRD is the source
+of truth for user requirements.
 
 ### Role-Aware Workflow Diagram
 
@@ -169,7 +192,7 @@ flowchart LR
   end
 
   subgraph tl [Tech Lead]
-    research[Optional research brief]
+    research[Research brief: required in auto mode]
     rootPlan[Create root overview plan]
     subPlans[Delegate affected submodule plans]
     clarifyPlan{Plan needs clarification?}
@@ -200,20 +223,23 @@ flowchart LR
   frontendReady((Frontend stage ready))
   frontendDone((Frontend stage complete))
   meetingChoice{Run optional sprint meeting?}
-  sprintMeeting[Review and improve PRD with role agents]
+  sprintMeeting[Review PRD and design with role agents]
 
   finish([Report changed repos, validation, and submodule pointer status])
 
-  request --> research
-  request --> prd
+  autoMode{Auto mode enabled?}
+
+  request --> autoMode
+  autoMode -->|Yes: all stages| research
+  autoMode -->|No: manual stages| prd
   research --> prd
   prd --> needsDesign
-  needsDesign -->|Yes - status: need-design| design
+  needsDesign -->|Yes in auto mode when UI applies| design
   design --> designDone --> clarifyPrd
   needsDesign -->|No| clarifyPrd
   clarifyPrd -->|Yes| updatePrd --> clarifyPrd
   clarifyPrd -->|No| meetingChoice
-  meetingChoice -->|Yes| sprintMeeting --> approvePrd
+  meetingChoice -->|Yes in auto mode| sprintMeeting --> approvePrd
   meetingChoice -->|No| approvePrd
   approvePrd -->|Status: approved| rootPlan
   rootPlan --> subPlans --> clarifyPlan
@@ -234,16 +260,16 @@ flowchart LR
 | Step | Primary role | Supporting roles | Artifact or output |
 | --- | --- | --- | --- |
 | Developer request | Developer | Project Manager, Tech Lead | Initial scope, constraints, and explicit exceptions to the normal workflow |
-| Optional research brief | Tech Lead + Project Manager | UI/UX Designer when experience research is needed | `research/RESEARCH-*.md` |
+| Research brief | Tech Lead + Project Manager | UI/UX Designer when experience research is needed | `research/RESEARCH-*.md`; optional manually, required in auto mode |
 | Draft PRD | Project Manager | Developer | `prds/PRD-*.md` with user value, scope, requirements, and acceptance criteria (status: `draft`) |
-| Optional UI/UX design | UI/UX Designer | Project Manager, Tech Lead | Starts from the draft PRD when selected; design artifact and PRD status updated to `design-done` before review |
+| UI/UX design | UI/UX Designer | Project Manager, Tech Lead | Optional manually; auto mode creates it for affected UI/UX or records non-applicability |
 | PRD review and clarification | Project Manager | Developer | Updated PRD with resolved ambiguity, starting from `draft` or `design-done` |
-| Optional sprint meeting during PRD review | Project Manager, Tech Lead, UI/UX Designer, Backend Developer, Frontend Developer | Developer for product decisions | Improved PRD and meeting record in `meeting-logs/`; may be skipped before approval |
-| PRD approval | Developer | Project Manager | PRD status `approved` after review, from `draft` or `design-done` |
+| Sprint meeting during PRD review | Project Manager, Tech Lead, UI/UX Designer, Backend Developer, Frontend Developer | Developer for product decisions | All roles review the design and contribute UI/UX feedback; required in auto mode, optional manually; improved PRD, design, and meeting record |
+| PRD approval | Developer, or agent in auto mode | Project Manager | PRD status `approved` after review, from `draft` or `design-done`; auto mode records its authority |
 | Root overview plan | Tech Lead | Project Manager, UI/UX Designer | `plans/PLAN-*.md` with architecture, ownership, sequence, validation, and risks |
 | Submodule detail plans | Tech Lead via sub-agents | Core, Backend, Frontend roles | `modules/*/plans/*.md` for only affected repositories |
 | Plan clarification | Tech Lead | Developer, implementation roles | Updated root or submodule plan |
-| Plan approval | Developer | Tech Lead | Approved root plan that permits implementation |
+| Plan approval | Developer, or agent in auto mode | Tech Lead | Approved root plan that permits implementation; auto mode records its authority |
 | Shared/core implementation | Core Developer | Tech Lead | Changes in repositories tagged as shared, core, package, or design-system owners in `project/repositories.json` |
 | Backend/API implementation | Backend Developer | Tech Lead, Core Developer | API/backend changes in repositories tagged as backend or service owners in `project/repositories.json` |
 | Web frontend implementation | Frontend Developer | UI/UX Designer, Backend Developer | Web frontend changes in repositories tagged as web/frontend owners; may run in parallel with app frontend implementation when contracts are ready |
@@ -260,6 +286,12 @@ Claude Code slash commands live in `.claude/skills/` and delegate to the same
 shared skills with `$ARGUMENTS`. Claude Code role agents live in
 `.claude/agents/` and delegate to the shared role definitions.
 
+- `$auto-mode on|off|toggle|status` or `/auto-mode on|off|toggle|status`
+  - Skill: `.agents/skills/auto-mode/SKILL.md`.
+  - Codex slash prompt: `.codex/prompts/auto-mode.md`.
+  - Command spec: `commands/auto-mode.md`.
+  - CLI equivalent: `workflows auto on|off|toggle|status [--root <path>]`.
+  - Auto mode is off by default and persists in workspace metadata.
 - `$project-setup`, `project-setup`, or `/project-setup`
   - Skill: `.agents/skills/project-setup/SKILL.md`.
   - Codex slash prompt: `.codex/prompts/project-setup.md`.
@@ -307,6 +339,9 @@ shared skills with `$ARGUMENTS`. Claude Code role agents live in
     and Frontend Developer.
   - Require every sub-agent to read the PRD and related documents before
     discussing requirements, risks, unanswered questions, and PRD improvements.
+  - Have every role review linked design artifacts, or the PRD's UX flows when
+    no artifact exists, and contribute an actionable UI/UX improvement or a
+    reasoned no-change assessment. The UI/UX Designer synthesizes the feedback.
   - Run bounded multi-round discussion: agents can ask questions, other agents
     can answer, question authors review answers, and unresolved items may get
     follow-up rounds before escalation.
@@ -316,7 +351,8 @@ shared skills with `$ARGUMENTS`. Claude Code role agents live in
     developer's active chat window.
   - Assign every question to the role agents that can answer it or to
     `@developer` when human input is required.
-  - Update the PRD after the meeting and save the question-and-answer record
+  - Update the PRD and any editable linked design artifact with accepted UI/UX
+    improvements, then save the design review and question-and-answer record
     under `meeting-logs/` with a filename based on the PRD ID.
   - Save logs using `templates/meeting-log-template.md` so every source agent
     produces the same meeting-log structure.
@@ -332,6 +368,8 @@ shared skills with `$ARGUMENTS`. Claude Code role agents live in
   - Plans created from an approved PRD must link back to that PRD.
   - Plans must carry forward relevant PRD research sources and summarize the
     planning implications for the root plan and each affected submodule plan.
+  - In auto mode, resolve agent-answerable questions and proceed to plan
+    approval without routine developer approval prompts.
 - `$approve-plan <plan-id>`, `approve-plan <plan-id>`, or `/approve-plan <plan-id>`
   - Skill: `.agents/skills/approve-plan/SKILL.md`.
   - Codex slash prompt: `.codex/prompts/approve-plan.md`.
@@ -343,6 +381,8 @@ shared skills with `$ARGUMENTS`. Claude Code role agents live in
     When multiple frontend repositories are ready and do not depend on each
     other's unimplemented local changes, spawn one frontend sub-agent for each
     platform and implement them in parallel.
+  - In auto mode, continue after each validated stage; ask only when a
+    developer-only decision blocks progression.
 - `$griling-plan <plan-id-or-path>`, `griling-plan <plan-id-or-path>`, or `/griling-plan <plan-id-or-path>`
   - Alias: `$grilling-plan <plan-id-or-path>`, `grilling-plan <plan-id-or-path>`, or `/grilling-plan <plan-id-or-path>`.
   - Skill: `.agents/skills/griling-plan/SKILL.md`.
@@ -450,8 +490,9 @@ When adding a project custom command:
 
 ### Implementation Sequence
 
-After `$approve-plan <plan-id>`, `approve-plan <plan-id>`, or
-`/approve-plan <plan-id>`, implement code by dependency-safe stages:
+After `$approve-plan <plan-id>`, `approve-plan <plan-id>`,
+`/approve-plan <plan-id>`, or auto-mode plan approval, implement code by
+dependency-safe stages:
 
 1. Shared/core stage from `project/workflows.json`, when affected
 2. Backend/API stage from `project/workflows.json`, when affected

@@ -13,6 +13,7 @@ const packageRoot = path.resolve(
 );
 const manifestDirectory = ".agent-workflows";
 const manifestPath = path.join(manifestDirectory, "manifest.json");
+const metadataPath = path.join(manifestDirectory, "metadata.json");
 const packageJson = readJson(path.join(packageRoot, "package.json"));
 const packageLocalPath = path.join(
 	"node_modules",
@@ -63,6 +64,8 @@ try {
 		runPackagedScript("scripts/workspace-integrity.ts", resolveRoot(args));
 	} else if (command === "check") {
 		runCheck(resolveRoot(args));
+	} else if (command === "auto") {
+		autoMode(resolveRoot(args), passthroughArgs(args));
 	} else {
 		printHelp();
 	}
@@ -164,6 +167,66 @@ function runPackagedScript(scriptPath, root) {
 	});
 
 	process.exit(result.status ?? 1);
+}
+
+function autoMode(root, args) {
+	const [action = "status", ...extra] = args;
+	if (extra.length > 0 || !["on", "off", "toggle", "status"].includes(action)) {
+		throw new Error(
+			"Usage: workflows auto on|off|toggle|status [--root <path>].",
+		);
+	}
+
+	const target = path.join(root, metadataPath);
+	let metadata;
+	try {
+		metadata = fs.existsSync(target) ? readJson(target) : {};
+	} catch {
+		throw new Error(`${metadataPath} is not valid JSON; auto mode is off.`);
+	}
+	if (
+		!metadata ||
+		typeof metadata !== "object" ||
+		Array.isArray(metadata) ||
+		(metadata.autoMode !== undefined &&
+			(metadata.autoMode === null ||
+				typeof metadata.autoMode !== "object" ||
+				Array.isArray(metadata.autoMode) ||
+				typeof metadata.autoMode.enabled !== "boolean"))
+	) {
+		throw new Error(`${metadataPath} has invalid autoMode metadata.`);
+	}
+
+	if (action !== "status") {
+		const enabled =
+			action === "toggle"
+				? !(metadata.autoMode?.enabled ?? false)
+				: action === "on";
+		const updated = {
+			...metadata,
+			autoMode: {
+				...metadata.autoMode,
+				enabled,
+				updatedAt: new Date().toISOString(),
+			},
+		};
+		fs.mkdirSync(path.dirname(target), { recursive: true });
+		const temporary = `${target}.${process.pid}.${Date.now()}.tmp`;
+		try {
+			fs.writeFileSync(temporary, `${JSON.stringify(updated, null, "\t")}\n`, {
+				flag: "wx",
+			});
+			fs.renameSync(temporary, target);
+		} finally {
+			if (fs.existsSync(temporary)) fs.unlinkSync(temporary);
+		}
+	}
+
+	const enabled =
+		action === "status"
+			? (metadata.autoMode?.enabled ?? false)
+			: action === "on" || (action === "toggle" && !metadata.autoMode?.enabled);
+	console.log(`Auto mode: ${enabled ? "on" : "off"} (${target})`);
 }
 
 function copyPaths(root, relativePaths, options) {
@@ -488,6 +551,7 @@ Usage:
   workflows dashboard [--root <path>] [-- --vite-arg]
   workflows integrity [--root <path>]
   workflows check [--root <path>]
+  workflows auto on|off|toggle|status [--root <path>]
 
 Commands:
   init       Write local workflow shims into a developer project and create a manifest.
@@ -495,6 +559,7 @@ Commands:
   dashboard  Start the packaged dashboard against the developer project.
   integrity  Run the packaged workspace integrity check against the project.
   check      Run package-provided workspace checks against the project.
+  auto       Persist or inspect workspace auto mode (default: off).
 
 Agent command and skill loading:
   Run workflows init once after global install, or bunx workflows init for a project-local install.

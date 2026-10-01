@@ -1,9 +1,9 @@
 ---
 name: sprint-meeting
 description: >-
-  Run a time-boxed role-agent review meeting for a PRD, improve the PRD, answer
-  agent-resolvable questions, and save the meeting transcript under
-  meeting-logs/.
+  Run a time-boxed role-agent review meeting for a PRD and its design, improve
+  requirements and UI/UX, answer agent-resolvable questions, and save the
+  meeting transcript under meeting-logs/.
 ---
 
 # sprint-meeting
@@ -70,6 +70,11 @@ If the client intercepts slash commands, use `$sprint-meeting` or
    - The agent's role file.
    - Meeting time box.
    - Required response format from the `Sub-Agent Response Format` section.
+   - A design review assignment: inspect every linked design artifact, or the
+     PRD's UX flows and notes if none exists; identify a concrete UI/UX
+     improvement from the agent's role perspective or explain why no change is
+     needed. Cover relevant user flows, states, accessibility, feasibility,
+     and consistency with the project's design language.
 10. If the runtime does not provide a sub-agent mechanism, stop and report that
    this command requires sub-agent spawning support. Do not silently replace the
    meeting with a single-agent review.
@@ -94,8 +99,9 @@ If the client intercepts slash commands, use `$sprint-meeting` or
     priority, external stakeholder choice, credentials, private business data, or
     another decision the agents cannot responsibly infer.
 15. Run a bounded multi-round discussion loop before asking the developer:
-    - **Round 1: discovery.** Every sub-agent submits findings, proposed PRD
-      updates, agent-answerable questions, and human-only questions.
+    - **Round 1: discovery.** Every sub-agent submits findings, design review
+      feedback, proposed PRD updates, agent-answerable questions, and human-only
+      questions.
     - **Round 2+: routed answers.** The chair routes every agent-answerable
       question to the named relevant agents. Responding agents answer from their
       role knowledge and may cite the PRD or related documents.
@@ -106,6 +112,10 @@ If the client intercepts slash commands, use `$sprint-meeting` or
       run another routed answer round for that question. Limit each question to
       two follow-up rounds unless the remaining 5-minute active budget is too
       small.
+    - **Design synthesis.** Route conflicting or dependent UI/UX suggestions to
+      the relevant agents. The UI/UX Designer synthesizes the five reviews into
+      accepted improvements, rejected suggestions with reasons, and unresolved
+      design decisions.
     - **Convergence.** Continue until no unresolved agent-answerable questions
       remain, only human-only questions remain, or the active 5-minute budget is
       reached.
@@ -130,6 +140,11 @@ If the client intercepts slash commands, use `$sprint-meeting` or
     - Add missing acceptance criteria.
     - Add affected-platform, UX, data/API/package contract, risk, validation, or
       non-goal details when the agents identify gaps.
+    - Reflect accepted UI/UX improvements in user flows, UX notes, and
+      acceptance criteria. Update a linked design artifact when it is editable
+      within the meeting scope; otherwise record the proposed artifact change
+      and owner in the meeting log for follow-up. Keep the PRD and design links
+      consistent.
     - Preserve product intent and do not introduce implementation plans or code.
 19. Update PRD metadata:
     - `Last updated`: current date.
@@ -143,6 +158,8 @@ If the client intercepts slash commands, use `$sprint-meeting` or
     empty sections so future agents and dashboard tooling can parse a consistent
     shape. Do not omit template sections.
 22. Do not create implementation plans or edit product code.
+    In auto mode, hand the updated PRD and meeting log to the PRD approval stage
+    without a routine developer approval prompt.
 
 ## Sub-Agent Response Format
 
@@ -156,6 +173,12 @@ Each sub-agent must return Markdown with these sections:
 ## Findings
 
 - <role-specific issue, gap, or confirmation>
+
+## Design Review
+
+- Design reviewed: <artifact path or PRD UX sections>
+- UI/UX contribution: <specific improvement and rationale, or "No change needed" with reason>
+- Affected flow, screen, or state: <location or "None">
 
 ## Agent-Answerable Questions And Answers
 
@@ -184,6 +207,8 @@ The main agent is the meeting chair. The chair must:
 - Keep the discussion inside the active 5-minute budget.
 - Merge duplicate questions before routing answers or asking the developer.
 - Run multiple routed answer rounds when needed.
+- Require a design review contribution from every role agent, then ask the
+  UI/UX Designer to synthesize the feedback before closing the meeting.
 - Let agents answer each other's role-answerable questions.
 - Require the question author to review each answer as accepted,
   needs-follow-up, or human-required.
@@ -195,6 +220,7 @@ The main agent is the meeting chair. The chair must:
 
 ## Output
 
-Report the PRD path, meeting log path, agents that participated, PRD sections
-updated, developer questions answered, unresolved human-only questions, and any
-validation performed.
+Report the PRD path, meeting log path, agents that participated, design
+improvements accepted, design artifacts updated or needing follow-up, PRD
+sections updated, developer questions answered, unresolved human-only questions,
+and any validation performed.

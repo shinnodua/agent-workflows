@@ -53,6 +53,8 @@ instead.
      should be used or avoided.
    For each question, include a suggested answer and clearly mark the
    recommended option so the developer can approve or correct it quickly.
+   In auto mode, first resolve agent-answerable choices from available context;
+   ask only questions requiring the developer's intent or information.
 8. If `<description>` is too vague to create a useful PRD, ask clarifying
    questions before writing the PRD.
 9. Capture answered importance questions in the PRD as requirements,
@@ -62,9 +64,16 @@ instead.
 12. Save the PRD in `prds/<prd-id-lowercase>.md`.
 13. Set `Status` to `draft`.
 14. Do not create plans or edit product code.
-15. After creating the draft, offer optional UI/UX design with `$create-design <design request>`. If chosen, design starts from this draft PRD; if skipped, PRD review can begin immediately.
-16. For the PRD review phase, suggest optional `$sprint-meeting <prd-id>` after any chosen design is complete. Make clear the developer may skip the meeting and review the PRD directly.
-17. Give the developer the approval command, `$approve-prd <prd-id>` or `approve-prd <prd-id>`, for when review is complete.
+15. In manual mode, offer optional UI/UX design with `$create-design <design
+    request>`. If chosen, design starts from this draft PRD; if skipped, PRD
+    review can begin immediately.
+16. In manual mode, suggest optional `$sprint-meeting <prd-id>` after any
+    chosen design is complete. The developer may skip the meeting and review
+    the PRD directly.
+17. In manual mode, give the developer `$approve-prd <prd-id>` for when review
+    is complete. In auto mode, continue through design and the sprint meeting
+    under `.agents/skills/auto-mode/SKILL.md` without stopping for stage choices
+    or approval. Do not mark the PRD approved until those stages are complete.
 
 ## Output
 

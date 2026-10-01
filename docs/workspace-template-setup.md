@@ -35,7 +35,7 @@ Each repository entry in `project/repositories.json` should use this shape:
 	"id": "client",
 	"name": "project-client",
 	"path": "modules/project-client",
-	"url": "git@github.com:example/project-client.git",
+	"url": "https://github.com/example/project-client.git",
 	"purpose": "Desktop or web client",
 	"scope": ["React UI", "local app behavior"],
 	"platforms": ["frontend"],
@@ -108,6 +108,9 @@ The update command refreshes workflow-owned shims and leaves project profile
 files, existing PRDs, plans, designs, research, meeting logs, docs, and
 submodules under developer control. Set `AGENT_WORKFLOWS_AUTO_UPDATE=1` for the
 install command if you want its lifecycle script to perform the refresh.
+The workspace auto-mode setting in `.agent-workflows/metadata.json` is also
+preserved. Use `bunx workflows auto on|off|toggle|status` or the agent
+`/auto-mode` command to change or inspect it; the default is off.
 Restart or reload any active agent session after the refresh so it can discover
 updated custom agents, commands, and skills.
 
