@@ -58,6 +58,19 @@ Advance through these stages in order, reusing verified artifacts if resuming:
 8. **Implement and validate:** Follow the approved plan and configured
    dependency-safe stages. Continue between stages without a routine developer
    prompt. Run each owning repository's validation commands and report results.
+9. **Completion handoff:** After coding and validation, use
+   `templates/auto-mode-completion-summary-template.md`. Require every serial
+   or delegated coding agent to return applicable, verified repository facts
+   from that template. Reconcile shared settings, conflicting reports, and
+   cross-repository setup order before publishing one final summary. Put the
+   developer's remaining Build, Run, and Roll out actions first. Report exact
+   build-service and runtime configuration, breaking changes, migrations,
+   validation limits, and affected app/web/API operations. Use `None` only
+   after checking; use `Unknown` with the missing fact and owner otherwise.
+   Never include secret values or claim an external build or runtime was tested
+   when it was not. Keep the template's artifact status, per-repository
+   implementation, validation, and human-only question sections in the final
+   report alongside the operational handoff.
 
 At each stage, show a concise progress update and verify the required artifact
 or validation result before advancing. Resolve questions that agents can answer
@@ -75,5 +88,9 @@ return to manual approval and stage gates before the next stage.
 ## Output
 
 For a toggle, report the effective state and metadata path. For a completed
-feature, report research, PRD, design or non-applicability, meeting log, plans,
-changed repositories, validation, and any unresolved human-only question.
+coding feature, follow `templates/auto-mode-completion-summary-template.md`
+and include research, PRD, design or non-applicability, meeting log, plans,
+changed repositories, validation, developer setup actions, breaking changes,
+and any unresolved human-only question. For a documentation-only feature, use
+the same headings and mark irrelevant build or runtime actions `None` after
+checking.

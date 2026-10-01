@@ -29,6 +29,9 @@ pnpm-debug.log*
 !.env.*.example
 .npmrc
 
+# Workspace-local agent settings
+.agent-workflows/
+
 # Generated diagram receipts can contain local paths
 .archify/**/*.browser-check.json
 .archify/**/*.delivery.json

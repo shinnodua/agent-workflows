@@ -267,7 +267,9 @@
       "dot": "emerald",
       "title": "Completion",
       "items": [
-        "Validate each changed repository and report changed submodules and pointer status.",
+        "Each coding agent reports verified build, runtime, migration, and compatibility facts.",
+        "Coordinator gives ordered developer Build, Run, and Roll out actions with breaking changes and validation limits.",
+        "Report changed submodules and pointer status; mark unchecked external settings Unknown with an owner.",
         "The developer owns commits."
       ]
     }

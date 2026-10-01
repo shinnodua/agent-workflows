@@ -162,6 +162,15 @@ production changes.
 
 With auto mode off, the existing manual approval and stage prompts apply.
 
+After auto-mode coding and validation, each implementer reports verified facts
+for its repository using
+[`templates/auto-mode-completion-summary-template.md`](templates/auto-mode-completion-summary-template.md).
+The coordinator reconciles these into one final handoff led by the developer's
+required Build, Run, and Roll out actions. It includes build-service and runtime
+settings, breaking changes, migrations, app/web/API setup, validation evidence,
+and unresolved facts with an owner. `None` means the category was checked and
+found inapplicable; unknown external state must be reported as `Unknown`.
+
 ## PRD And Planning Workflow
 
 Every feature or implementation task needs a saved PRD before planning or code
@@ -274,7 +283,7 @@ flowchart LR
 | Backend/API implementation | Backend Developer | Tech Lead, Core Developer | API/backend changes in repositories tagged as backend or service owners in `project/repositories.json` |
 | Web frontend implementation | Frontend Developer | UI/UX Designer, Backend Developer | Web frontend changes in repositories tagged as web/frontend owners; may run in parallel with app frontend implementation when contracts are ready |
 | App frontend implementation | Frontend Developer | UI/UX Designer, Backend Developer, Core Developer | App frontend changes in repositories tagged as app/frontend owners; may run in parallel with web frontend implementation when contracts are ready |
-| Validation and handoff report | Implementing role for each repo | Tech Lead | Validation results, changed submodules, and root submodule pointer note |
+| Validation and handoff report | Implementing role for each repo | Tech Lead | Per-repository facts and one [auto-mode completion summary](templates/auto-mode-completion-summary-template.md) with developer actions, breaking changes, validation results, changed submodules, and root submodule pointer note |
 
 ### PRD Commands
 
