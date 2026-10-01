@@ -1,5 +1,15 @@
 # agent-workflows
 
+## 0.2.0
+
+### Minor Changes
+
+- ed221ae: Add workspace-local auto mode with a CLI and agent command to progress through research, PRD, design, sprint review, approvals, planning, implementation, and validation for developer-initiated feature work.
+
+### Patch Changes
+
+- 9b4711f: auto mode
+
 ## 0.1.8
 
 ### Patch Changes
