@@ -1,5 +1,11 @@
 # agent-workflows
 
+## 0.2.1
+
+### Patch Changes
+
+- e35eb9e: add completion template
+
 ## 0.2.0
 
 ### Minor Changes
