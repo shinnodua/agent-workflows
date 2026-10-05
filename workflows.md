@@ -294,6 +294,20 @@ should only delegate to the corresponding skill with `$ARGUMENTS`.
 Claude Code slash commands live in `.claude/skills/` and delegate to the same
 shared skills with `$ARGUMENTS`. Claude Code role agents live in
 `.claude/agents/` and delegate to the shared role definitions.
+Developers configure per-role models in `workspace.config.json` under
+`agentModels`. Run `workflows agents sync` after editing; `workflows init` and
+`workflows update` apply the values automatically to `.agents/agents/` and
+`.claude/agents/`. A role may use a string for both formats or an object with
+separate `agents` and `claude` model IDs. An omitted role uses `inherit`.
+`workflowModels` can override a role for `research`, `prd`, `design`, `meeting`,
+`planning`, `coding`, or `validation`. Each step may set `default` for all roles
+and then role-specific values. Resolution is step role, step default, base role,
+then runtime default. Run
+`workflows agents resolve <step> <role> --format <agents|claude> --json`
+immediately before spawning a role agent and pass the
+resolved model when supported. Static agent files hold only the base model;
+step overrides apply to newly spawned agents. Reload the runtime and start a
+new agent session for changed base models to take effect.
 
 - `$auto-mode on|off|toggle|status` or `/auto-mode on|off|toggle|status`
   - Skill: `.agents/skills/auto-mode/SKILL.md`.

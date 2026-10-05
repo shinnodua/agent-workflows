@@ -48,6 +48,56 @@ discover custom agents, commands, and skills from local `.agents/agents/`,
 `commands/`, and `workflows.md` shims. Claude Code loads `CLAUDE.md`, which
 imports the shared `AGENTS.md` rules. Run `/project-setup` in either agent.
 
+To choose a model for each role, edit `agentModels` in `workspace.config.json`.
+The five keys are `project-manager`, `tech-lead`, `ui-ux-designer`,
+`backend-developer`, and `frontend-developer`. Each defaults to `inherit`; replace
+any value with a model ID, or use an object with separate `agents` and `claude`
+values when the runtimes need different IDs. For example:
+
+```json
+{
+  "agentModels": {
+    "project-manager": "inherit",
+    "tech-lead": { "agents": "your-agents-model", "claude": "your-claude-model" },
+    "ui-ux-designer": "inherit",
+    "backend-developer": "inherit",
+    "frontend-developer": "inherit"
+  }
+}
+```
+
+After editing, run `bunx workflows agents sync` and start a new agent session.
+The command updates local `.agents/agents/` and `.claude/agents/` definitions;
+`workflows init` and `workflows update` run it automatically. Updates preserve
+your workspace config. Each agent runtime checks whether its configured model
+is available when the agent starts.
+
+You can override a role's base model for a workflow step. Add `workflowModels`
+alongside `agentModels` in the same config file:
+
+```json
+{
+  "workflowModels": {
+    "planning": {
+      "default": "planning-model-a",
+      "backend-developer": "planning-model-b"
+    },
+    "coding": {
+      "backend-developer": "coding-model-c"
+    }
+  }
+}
+```
+
+The supported steps are `research`, `prd`, `design`, `meeting`, `planning`,
+`coding`, and `validation`. A role override wins over its step default, which
+wins over its base `agentModels` value. An explicit `inherit` chooses the runtime
+default. Runtime-specific objects must provide both `agents` and `claude` IDs.
+Check a result with `bunx workflows agents resolve planning backend-developer --format
+agents --json`. Step overrides apply when the workflow spawns a new role agent;
+`agents sync` updates only base agent files. If coding and validation run in one
+agent session, that agent keeps its coding model.
+
 Then fill the project profile with the guided command:
 
 ```sh
@@ -86,6 +136,8 @@ bunx workflows update
 bunx workflows integrity
 bunx workflows check
 bunx workflows auto on|off|toggle|status
+bunx workflows agents sync
+bunx workflows agents resolve planning tech-lead --format agents --json
 ```
 
 - `workflows init` sets up a developer project to follow the workflow.
@@ -99,6 +151,8 @@ bunx workflows auto on|off|toggle|status
 - `workflows update` refreshes workflow-owned shims after upgrading this package.
 - `workflows integrity` validates workspace artifact metadata.
 - `workflows check` runs package-provided workspace checks.
+- `workflows agents sync` applies per-role models from `workspace.config.json`.
+- `workflows agents resolve` reports the effective model and config source for a workflow step.
 
 ## Commit Security Check
 

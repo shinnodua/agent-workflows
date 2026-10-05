@@ -58,6 +58,9 @@ Advance through these stages in order, reusing verified artifacts if resuming:
 8. **Implement and validate:** Follow the approved plan and configured
    dependency-safe stages. Continue between stages without a routine developer
    prompt. Run each owning repository's validation commands and report results.
+   Resolve the `coding` model before spawning an implementation role. Resolve
+   `validation` only when spawning a separate validation agent; an existing
+   coding agent keeps its model while validating its own work.
 9. **Completion handoff:** After coding and validation, use
    `templates/auto-mode-completion-summary-template.md`. Require every serial
    or delegated coding agent to return applicable, verified repository facts

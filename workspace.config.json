@@ -2,6 +2,17 @@
 	"projectName": "Agent Workflow Template",
 	"artifactDirectories": ["prds", "plans", "designs", "research", "docs"],
 	"projectProfile": "project/repositories.json",
+	"agentModels": {
+		"project-manager": "inherit",
+		"tech-lead": "inherit",
+		"ui-ux-designer": "inherit",
+		"backend-developer": "inherit",
+		"frontend-developer": "inherit"
+	},
+	"workflowModels": {
+		"planning": {},
+		"coding": {}
+	},
 	"dashboard": {
 		"enabled": true
 	}

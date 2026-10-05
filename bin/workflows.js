@@ -19,12 +19,27 @@ const packageLocalPath = path.join(
 	"node_modules",
 	...packageJson.name.split("/"),
 );
+const roleNames = [
+	"project-manager",
+	"tech-lead",
+	"ui-ux-designer",
+	"backend-developer",
+	"frontend-developer",
+];
+const workflowSteps = [
+	"research",
+	"prd",
+	"design",
+	"meeting",
+	"planning",
+	"coding",
+	"validation",
+];
 
 const managedPaths = [
 	"AGENTS.md",
 	"CLAUDE.md",
 	"workflows.md",
-	"workspace.config.json",
 	".codex/prompts",
 	".claude/skills",
 	".claude/agents",
@@ -37,6 +52,7 @@ const managedPaths = [
 ];
 
 const scaffoldOnlyPaths = [
+	"workspace.config.json",
 	".gitmodules.example",
 	"project/PROJECT.md",
 	"project/repositories.json",
@@ -66,6 +82,17 @@ try {
 		runCheck(resolveRoot(args));
 	} else if (command === "auto") {
 		autoMode(resolveRoot(args), passthroughArgs(args));
+	} else if (command === "agents") {
+		const agentArgs = passthroughArgs(args);
+		if (agentArgs.length === 1 && agentArgs[0] === "sync") {
+			syncAgentModels(resolveRoot(args));
+		} else if (agentArgs[0] === "resolve") {
+			resolveAgentModelCommand(resolveRoot(args), agentArgs.slice(1));
+		} else {
+			throw new Error(
+				"Usage: workflows agents sync | resolve <step> <role> --format <agents|claude> [--json] [--root <path>].",
+			);
+		}
 	} else {
 		printHelp();
 	}
@@ -78,8 +105,10 @@ try {
 
 function initWorkspace(root) {
 	ensureDirectory(root);
-	const managed = copyPaths(root, managedPaths, { overwrite: false });
 	const scaffolded = copyPaths(root, scaffoldOnlyPaths, { overwrite: false });
+	const { models } = readModelConfiguration(root);
+	const managed = copyPaths(root, managedPaths, { overwrite: false });
+	syncAgentModels(root, models);
 	mergePackageScripts(root);
 	writeManifest(root);
 
@@ -97,10 +126,12 @@ function initWorkspace(root) {
 
 function updateWorkspace(root) {
 	const manifest = loadManifest(root);
+	const { models } = readModelConfiguration(root);
 	const paths = [
 		...new Set([...(manifest?.managedPaths ?? []), ...managedPaths]),
-	];
+	].filter((relativePath) => relativePath !== "workspace.config.json");
 	const managed = copyPaths(root, paths, { overwrite: true });
+	syncAgentModels(root, models);
 	writeManifest(root);
 
 	console.log(`Updated ${managed.length} managed workflow files in ${root}`);
@@ -110,6 +141,222 @@ function updateWorkspace(root) {
 	console.log(
 		"Restart or reload any active agent session so it can discover refreshed custom agent, command, and skill shims.",
 	);
+}
+
+function readModelConfiguration(root) {
+	const configPath = path.join(root, "workspace.config.json");
+	let config;
+	try {
+		config = readJson(configPath);
+	} catch (error) {
+		throw new Error(
+			`workspace.config.json could not be read as JSON: ${error instanceof Error ? error.message : String(error)}`,
+		);
+	}
+	if (!config || typeof config !== "object" || Array.isArray(config)) {
+		throw new Error("workspace.config.json must contain a JSON object.");
+	}
+	const configured = Object.hasOwn(config, "agentModels")
+		? config.agentModels
+		: {};
+	if (
+		!configured ||
+		typeof configured !== "object" ||
+		Array.isArray(configured)
+	) {
+		throw new Error("workspace.config.json agentModels must be an object.");
+	}
+	for (const role of Object.keys(configured)) {
+		if (!roleNames.includes(role)) {
+			throw new Error(
+				`workspace.config.json agentModels has unknown role ${JSON.stringify(role)}; expected ${roleNames.join(", ")}.`,
+			);
+		}
+	}
+	const models = {};
+	for (const role of roleNames) {
+		const selection = Object.hasOwn(configured, role)
+			? configured[role]
+			: "inherit";
+		models[role] = parseModelSelection(selection, `agentModels.${role}`);
+	}
+	const configuredWorkflow = Object.hasOwn(config, "workflowModels")
+		? config.workflowModels
+		: {};
+	if (
+		!configuredWorkflow ||
+		typeof configuredWorkflow !== "object" ||
+		Array.isArray(configuredWorkflow)
+	) {
+		throw new Error("workspace.config.json workflowModels must be an object.");
+	}
+	const workflowModels = {};
+	for (const [step, selections] of Object.entries(configuredWorkflow)) {
+		if (!workflowSteps.includes(step)) {
+			throw new Error(
+				`workspace.config.json workflowModels has unknown step ${JSON.stringify(step)}; expected ${workflowSteps.join(", ")}.`,
+			);
+		}
+		if (
+			!selections ||
+			typeof selections !== "object" ||
+			Array.isArray(selections)
+		) {
+			throw new Error(
+				`workspace.config.json workflowModels.${step} must be an object of role selections.`,
+			);
+		}
+		workflowModels[step] = {};
+		for (const [role, selection] of Object.entries(selections)) {
+			if (role !== "default" && !roleNames.includes(role)) {
+				throw new Error(
+					`workspace.config.json workflowModels.${step} has unknown role ${JSON.stringify(role)}; expected default or ${roleNames.join(", ")}.`,
+				);
+			}
+			workflowModels[step][role] = parseModelSelection(
+				selection,
+				`workflowModels.${step}.${role}`,
+			);
+		}
+	}
+	return { models, workflowModels };
+}
+
+function parseModelSelection(selection, key) {
+	if (typeof selection === "string") {
+		const model = validateModel(selection, key);
+		return { agents: model, claude: model };
+	}
+	if (!selection || typeof selection !== "object" || Array.isArray(selection)) {
+		throw new Error(
+			`workspace.config.json ${key} has invalid model ${JSON.stringify(selection)}; use a model ID or {"agents":"...","claude":"..."}.`,
+		);
+	}
+	const keys = Object.keys(selection);
+	if (
+		keys.length !== 2 ||
+		!keys.includes("agents") ||
+		!keys.includes("claude")
+	) {
+		throw new Error(
+			`workspace.config.json ${key} must contain exactly agents and claude model IDs.`,
+		);
+	}
+	return {
+		agents: validateModel(selection.agents, `${key}.agents`),
+		claude: validateModel(selection.claude, `${key}.claude`),
+	};
+}
+
+function validateModel(model, key) {
+	if (
+		typeof model !== "string" ||
+		!/^[A-Za-z0-9][A-Za-z0-9._/@-]*$/.test(model)
+	) {
+		throw new Error(
+			`workspace.config.json ${key} has invalid model ${JSON.stringify(model)}; use a nonempty single-line model ID or inherit.`,
+		);
+	}
+	return model;
+}
+
+function syncAgentModels(root, models = readModelConfiguration(root).models) {
+	const changes = [];
+	for (const role of roleNames) {
+		for (const [format, relativePath] of [
+			["agents", `.agents/agents/${role}/agent.md`],
+			["claude", `.claude/agents/${role}.md`],
+		]) {
+			const target = path.join(root, relativePath);
+			const source = fs.readFileSync(target, "utf8");
+			const frontmatterEnd = source.startsWith("---\n")
+				? source.indexOf("\n---\n", 4)
+				: -1;
+			const frontmatter = source.slice(0, frontmatterEnd + 1);
+			const modelLines = frontmatter.match(/^model:.*$/gm);
+			if (frontmatterEnd < 0 || modelLines?.length !== 1) {
+				throw new Error(
+					`${relativePath} must have exactly one model frontmatter line.`,
+				);
+			}
+			const updated =
+				frontmatter.replace(/^model:.*$/m, `model: ${models[role][format]}`) +
+				source.slice(frontmatterEnd + 1);
+			changes.push({
+				target,
+				relativePath,
+				updated,
+				changed: updated !== source,
+			});
+		}
+	}
+	for (const change of changes) {
+		if (change.changed) fs.writeFileSync(change.target, change.updated);
+	}
+	for (const role of roleNames) {
+		const roleChanges = changes.filter(
+			(change) =>
+				change.relativePath.includes(`/${role}/`) ||
+				change.relativePath.endsWith(`/${role}.md`),
+		);
+		console.log(
+			`${role}: agents=${models[role].agents}, claude=${models[role].claude} (${roleChanges.some((change) => change.changed) ? "updated" : "already up to date"} in both agent formats)`,
+		);
+	}
+	console.log(
+		"Base role files are synchronized. Workflow-step overrides apply when a coordinator spawns a new agent; reload the runtime for changed base models.",
+	);
+}
+
+function resolveAgentModelCommand(root, args) {
+	const [step, role, ...options] = args;
+	let format;
+	let json = false;
+	for (let index = 0; index < options.length; index += 1) {
+		if (options[index] === "--format") {
+			format = options[++index];
+		} else if (options[index] === "--json") {
+			json = true;
+		} else {
+			throw new Error(
+				`Unknown agents resolve option ${JSON.stringify(options[index])}.`,
+			);
+		}
+	}
+	if (!workflowSteps.includes(step)) {
+		throw new Error(
+			`Unknown workflow step ${JSON.stringify(step)}; expected ${workflowSteps.join(", ")}.`,
+		);
+	}
+	if (!roleNames.includes(role)) {
+		throw new Error(
+			`Unknown agent role ${JSON.stringify(role)}; expected ${roleNames.join(", ")}.`,
+		);
+	}
+	if (!["agents", "claude"].includes(format)) {
+		throw new Error("--format must be agents or claude.");
+	}
+	const configuration = readModelConfiguration(root);
+	const resolution = resolveAgentModel(configuration, step, role, format);
+	console.log(
+		json
+			? JSON.stringify(resolution)
+			: `${resolution.model}${resolution.model === "inherit" ? " (runtime default)" : ""} (source: ${resolution.source}; format: ${format})`,
+	);
+}
+
+function resolveAgentModel(configuration, step, role, format) {
+	const stepModels = configuration.workflowModels[step] ?? {};
+	for (const [source, selection] of [
+		[`workflowModels.${step}.${role}`, stepModels[role]],
+		[`workflowModels.${step}.default`, stepModels.default],
+		[`agentModels.${role}`, configuration.models[role]],
+	]) {
+		if (selection) {
+			return { step, role, format, model: selection[format], source };
+		}
+	}
+	return { step, role, format, model: "inherit", source: "runtime default" };
 }
 
 function startDashboard(root, args) {
@@ -552,6 +799,8 @@ Usage:
   workflows integrity [--root <path>]
   workflows check [--root <path>]
   workflows auto on|off|toggle|status [--root <path>]
+  workflows agents sync [--root <path>]
+  workflows agents resolve <step> <role> --format <agents|claude> [--json] [--root <path>]
 
 Commands:
   init       Write local workflow shims into a developer project and create a manifest.
@@ -560,6 +809,7 @@ Commands:
   integrity  Run the packaged workspace integrity check against the project.
   check      Run package-provided workspace checks against the project.
   auto       Persist or inspect workspace auto mode (default: off).
+  agents    Sync base role models or resolve workflow-step overrides.
 
 Agent command and skill loading:
   Run workflows init once after global install, or bunx workflows init for a project-local install.

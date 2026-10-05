@@ -111,6 +111,18 @@ install command if you want its lifecycle script to perform the refresh.
 The workspace auto-mode setting in `.agent-workflows/metadata.json` is also
 preserved. Use `bunx workflows auto on|off|toggle|status` or the agent
 `/auto-mode` command to change or inspect it; the default is off.
+Role models in `workspace.config.json` are also preserved. Set each role under
+`agentModels` to `inherit`, a model ID, or an object with `agents` and `claude`
+model IDs, then run `bunx workflows agents sync`.
+The command updates both `.agents/agents/` and `.claude/agents/` definitions.
+Initialization and updates synchronize them automatically. Start a new agent
+session after reloading the runtime to use changed models.
+For a step-specific model, add `workflowModels.<step>.<role>` or
+`workflowModels.<step>.default` to the same file. The supported steps are
+`research`, `prd`, `design`, `meeting`, `planning`, `coding`, and `validation`.
+Use `bunx workflows agents resolve planning tech-lead --format agents --json`
+to inspect the selected model and its config source. Step overrides affect
+newly spawned workflow agents; static role files retain the base model.
 Restart or reload any active agent session after the refresh so it can discover
 updated custom agents, commands, and skills.
 

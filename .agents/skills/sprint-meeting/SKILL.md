@@ -63,6 +63,10 @@ If the client intercepts slash commands, use `$sprint-meeting` or
    - `workspace-ui-ux-designer`
    - `workspace-backend-developer`
    - `workspace-frontend-developer`
+   Resolve each role's `meeting` model from `workspace.config.json` using
+   `workflows agents resolve meeting <role> --format <agents|claude> --json`
+   before spawning. Pass a non-`inherit` model when the runtime supports it;
+   report any selected model that cannot be applied.
 9. Give every sub-agent the same base packet:
    - PRD path and PRD contents.
    - Related document paths and relevant excerpts or summaries.

@@ -67,6 +67,7 @@ instead.
 16. Make dependent platform plans explicitly reference and rely on the structures defined in the core/shared plan.
 17. Create a root overview plan in `plans/` with a stable plan ID using `PLAN-<YYYYMMDD>-<short-slug>`.
 18. For each affected repository or platform, spawn a sub-agent to create the detailed submodule plan in its configured `artifactDirectories.plans` path from `project/repositories.json` instead of writing it directly in the master agent.
+    Resolve the assigned role's `planning` model with `workflows agents resolve planning <role> --format <agents|claude> --json` before spawning; use a non-`inherit` model when supported and report an unapplied override.
 19. Give each sub-agent enough context to plan without re-deriving the full workspace approach:
     - Approved PRD path, PRD ID, product requirements, and relevant acceptance criteria.
     - Answered importance questions, especially assumptions that changed the
