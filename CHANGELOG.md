@@ -1,5 +1,11 @@
 # agent-workflows
 
+## 0.2.3
+
+### Patch Changes
+
+- 0ca8bb7: fix bug
+
 ## 0.2.2
 
 ### Patch Changes
