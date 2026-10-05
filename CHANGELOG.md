@@ -1,5 +1,11 @@
 # agent-workflows
 
+## 0.2.4
+
+### Patch Changes
+
+- f2e68c9: improve model config
+
 ## 0.2.3
 
 ### Patch Changes
