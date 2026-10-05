@@ -129,7 +129,7 @@ test("invalid auto mode config fails closed without overwriting it", (context) =
 	assert.match(malformed.stderr, /could not be read as JSON/);
 });
 
-test("role models sync to both agent formats and survive legacy updates", (context) => {
+test("runtime-specific role models sync and survive legacy updates", (context) => {
 	const root = fs.mkdtempSync(
 		path.join(os.tmpdir(), "agent-workflows-models-"),
 	);
@@ -138,44 +138,52 @@ test("role models sync to both agent formats and survive legacy updates", (conte
 	const configPath = path.join(root, "workspace.config.json");
 	const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
 	config.agentModels["tech-lead"] = {
-		agents: "example/architect-v2",
+		antigravity: "pro",
 		claude: "example-claude-v2",
 	};
-	config.agentModels["frontend-developer"] = "example-ui-3";
+	config.agentModels["frontend-developer"] = {
+		antigravity: "flash",
+		claude: "example-ui-3",
+	};
 	fs.writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
 
-	const firstSync = run(root, "agents", "sync");
+	const firstSync = run(root, "agents", "sync", "--format", "antigravity");
 	assert.equal(firstSync.status, 0, firstSync.stderr);
 	assert.match(
 		firstSync.stdout,
-		/tech-lead: agents=example\/architect-v2, claude=example-claude-v2 \(updated/,
+		/tech-lead: antigravity=pro, claude=example-claude-v2 \(updated/,
 	);
-	for (const [role, model] of [
-		["frontend-developer", "example-ui-3"],
-		["project-manager", "inherit"],
+	for (const [role, agentsModel, claudeModel] of [
+		["frontend-developer", "flash", "example-ui-3"],
+		["project-manager", "inherit", "inherit"],
 	]) {
-		for (const relativePath of [
-			`.agents/agents/${role}/agent.md`,
-			`.claude/agents/${role}.md`,
-		]) {
-			assert.match(
-				fs.readFileSync(path.join(root, relativePath), "utf8"),
-				new RegExp(`^model: ${model.replaceAll("/", "\\/")}$`, "m"),
-			);
-		}
+		assert.match(
+			fs.readFileSync(
+				path.join(root, `.agents/agents/${role}/agent.md`),
+				"utf8",
+			),
+			new RegExp(`^model: ${agentsModel}$`, "m"),
+		);
+		assert.match(
+			fs.readFileSync(path.join(root, `.claude/agents/${role}.md`), "utf8"),
+			new RegExp(`^model: ${claudeModel}$`, "m"),
+		);
 	}
 	assert.match(
 		fs.readFileSync(
 			path.join(root, ".agents/agents/tech-lead/agent.md"),
 			"utf8",
 		),
-		/^model: example\/architect-v2$/m,
+		/^model: pro$/m,
 	);
 	assert.match(
 		fs.readFileSync(path.join(root, ".claude/agents/tech-lead.md"), "utf8"),
 		/^model: example-claude-v2$/m,
 	);
-	assert.match(run(root, "agents", "sync").stdout, /already up to date/);
+	assert.match(
+		run(root, "agents", "sync", "--format", "antigravity").stdout,
+		/already up to date/,
+	);
 
 	const manifestPath = path.join(root, ".agent-workflows/manifest.json");
 	const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
@@ -184,8 +192,8 @@ test("role models sync to both agent formats and survive legacy updates", (conte
 	assert.equal(run(root, "update").status, 0);
 	assert.equal(
 		JSON.parse(fs.readFileSync(configPath, "utf8")).agentModels["tech-lead"]
-			.agents,
-		"example/architect-v2",
+			.antigravity,
+		"pro",
 	);
 	assert.match(
 		fs.readFileSync(path.join(root, ".claude/agents/tech-lead.md"), "utf8"),
@@ -247,16 +255,16 @@ test("workflow steps override role models with source attribution", (context) =>
 	const configPath = path.join(root, "workspace.config.json");
 	const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
 	config.agentModels["tech-lead"] = {
-		agents: "base-agents",
+		antigravity: "flash",
 		claude: "base-claude",
 	};
 	config.workflowModels = {
 		planning: {
-			default: "planning-default",
-			"tech-lead": { agents: "planning-agents", claude: "planning-claude" },
+			default: { antigravity: "pro" },
+			"tech-lead": { antigravity: "flash", claude: "planning-claude" },
 		},
-		coding: { "tech-lead": "coding-model" },
-		validation: { "tech-lead": "inherit" },
+		coding: { "tech-lead": { antigravity: "pro" } },
+		validation: { "tech-lead": { antigravity: "inherit" } },
 	};
 	fs.writeFileSync(configPath, JSON.stringify(config));
 	const resolve = (step, role, format) => {
@@ -273,27 +281,27 @@ test("workflow steps override role models with source attribution", (context) =>
 		assert.equal(result.status, 0, result.stderr);
 		return JSON.parse(result.stdout);
 	};
-	assert.deepEqual(resolve("planning", "tech-lead", "agents"), {
+	assert.deepEqual(resolve("planning", "tech-lead", "antigravity"), {
 		step: "planning",
 		role: "tech-lead",
-		format: "agents",
-		model: "planning-agents",
+		format: "antigravity",
+		model: "flash",
 		source: "workflowModels.planning.tech-lead",
 	});
 	assert.equal(
 		resolve("planning", "tech-lead", "claude").model,
 		"planning-claude",
 	);
-	assert.equal(resolve("coding", "tech-lead", "agents").model, "coding-model");
+	assert.equal(resolve("coding", "tech-lead", "antigravity").model, "pro");
 	assert.equal(
-		resolve("planning", "frontend-developer", "agents").model,
-		"planning-default",
+		resolve("planning", "frontend-developer", "antigravity").model,
+		"pro",
 	);
-	assert.equal(resolve("research", "tech-lead", "agents").model, "base-agents");
+	assert.equal(resolve("research", "tech-lead", "antigravity").model, "flash");
 	assert.deepEqual(
 		[
-			resolve("validation", "tech-lead", "agents").model,
-			resolve("validation", "tech-lead", "agents").source,
+			resolve("validation", "tech-lead", "antigravity").model,
+			resolve("validation", "tech-lead", "antigravity").source,
 		],
 		["inherit", "workflowModels.validation.tech-lead"],
 	);
@@ -305,9 +313,9 @@ test("workflow steps override role models with source attribution", (context) =>
 			"planning",
 			"tech-lead",
 			"--format",
-			"agents",
+			"antigravity",
 		).stdout,
-		/planning-agents \(source: workflowModels\.planning\.tech-lead; format: agents\)/,
+		/flash \(source: workflowModels\.planning\.tech-lead; runtime: antigravity\)/,
 	);
 	assert.match(
 		run(root, "agents", "resolve", "unknown", "tech-lead", "--format", "agents")
@@ -322,7 +330,7 @@ test("workflow steps override role models with source attribution", (context) =>
 	assert.match(
 		run(root, "agents", "resolve", "planning", "tech-lead", "--format", "other")
 			.stderr,
-		/--format must be agents or claude/,
+		/--format must be codex, antigravity, or claude/,
 	);
 });
 
@@ -338,7 +346,7 @@ test("invalid workflow override fails before agent files change", (context) => {
 	fs.writeFileSync(configPath, JSON.stringify(config));
 	assert.match(
 		run(root, "agents", "sync").stderr,
-		/workflowModels\.planning\.tech-lead must contain exactly agents and claude/,
+		/workflowModels\.planning\.tech-lead must use codex, antigravity, and\/or claude model keys/,
 	);
 	assert.equal(run(root, "update").status, 1);
 	assert.equal(fs.readFileSync(agentPath, "utf8"), before);
@@ -346,6 +354,51 @@ test("invalid workflow override fails before agent files change", (context) => {
 	fs.writeFileSync(configPath, JSON.stringify(config));
 	assert.match(run(root, "agents", "sync").stderr, /unknown step/);
 	assert.equal(fs.readFileSync(agentPath, "utf8"), before);
+});
+
+test("Antigravity model tiers are listed and invalid tiers fall back to inherit", (context) => {
+	const root = fs.mkdtempSync(
+		path.join(os.tmpdir(), "agent-workflows-antigravity-models-"),
+	);
+	context.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	assert.equal(run(root, "init").status, 0);
+	const configPath = path.join(root, "workspace.config.json");
+	const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+	config.workflowModels = {
+		coding: { "tech-lead": { antigravity: "enterprise" } },
+	};
+	fs.writeFileSync(configPath, JSON.stringify(config));
+	const invalidModel = run(
+		root,
+		"agents",
+		"resolve",
+		"coding",
+		"tech-lead",
+		"--format",
+		"antigravity",
+		"--json",
+	);
+	assert.equal(invalidModel.status, 0, invalidModel.stderr);
+	assert.match(invalidModel.stderr, /not a supported Antigravity model tier/);
+	assert.deepEqual(JSON.parse(invalidModel.stdout), {
+		step: "coding",
+		role: "tech-lead",
+		format: "antigravity",
+		model: "inherit",
+		source: "invalid model fallback (runtime default)",
+	});
+	const models = run(
+		root,
+		"agents",
+		"models",
+		"--format",
+		"antigravity",
+		"--json",
+	);
+	assert.deepEqual(JSON.parse(models.stdout), {
+		format: "antigravity",
+		models: ["inherit", "flash", "pro"],
+	});
 });
 
 test("update backfills visible model defaults in legacy configs without replacing choices", (context) => {
@@ -368,12 +421,17 @@ test("update backfills visible model defaults in legacy configs without replacin
 	const migrated = JSON.parse(fs.readFileSync(configPath, "utf8"));
 	assert.equal(migrated.projectName, "Legacy project");
 	assert.deepEqual(migrated.customSetting, { keep: true });
+	const inheritedModels = {
+		codex: "inherit",
+		antigravity: "inherit",
+		claude: "inherit",
+	};
 	assert.deepEqual(migrated.agentModels, {
-		"project-manager": "inherit",
-		"tech-lead": "inherit",
-		"ui-ux-designer": "inherit",
-		"backend-developer": "inherit",
-		"frontend-developer": "inherit",
+		"project-manager": inheritedModels,
+		"tech-lead": inheritedModels,
+		"ui-ux-designer": inheritedModels,
+		"backend-developer": inheritedModels,
+		"frontend-developer": inheritedModels,
 	});
 	assert.deepEqual(migrated.workflowModels, { planning: {}, coding: {} });
 
@@ -390,7 +448,7 @@ test("update backfills visible model defaults in legacy configs without replacin
 	assert.equal(second.status, 0, second.stderr);
 	const partial = JSON.parse(fs.readFileSync(configPath, "utf8"));
 	assert.equal(partial.agentModels["tech-lead"], "chosen-model");
-	assert.equal(partial.agentModels["backend-developer"], "inherit");
+	assert.deepEqual(partial.agentModels["backend-developer"], inheritedModels);
 	assert.equal(partial.workflowModels.planning["tech-lead"], "planning-model");
 	assert.deepEqual(partial.workflowModels.coding, {});
 	const textAfterMigration = fs.readFileSync(configPath, "utf8");
