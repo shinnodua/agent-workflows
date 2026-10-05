@@ -51,14 +51,18 @@ imports the shared `AGENTS.md` rules. Run `/project-setup` in either agent.
 To choose a model for each role, edit `agentModels` in `workspace.config.json`.
 The five keys are `project-manager`, `tech-lead`, `ui-ux-designer`,
 `backend-developer`, and `frontend-developer`. Each defaults to `inherit`; replace
-any value with a model ID, or use an object with separate `agents` and `claude`
-values when the runtimes need different IDs. For example:
+any value with a model ID, or use an object with separate `codex`,
+`antigravity`, and `claude` values when using multiple coding agents. For example:
 
 ```json
 {
   "agentModels": {
     "project-manager": "inherit",
-    "tech-lead": { "agents": "your-agents-model", "claude": "your-claude-model" },
+    "tech-lead": {
+      "codex": "gpt-6-astra",
+      "antigravity": "pro",
+      "claude": "sonnet"
+    },
     "ui-ux-designer": "inherit",
     "backend-developer": "inherit",
     "frontend-developer": "inherit"
@@ -66,12 +70,24 @@ values when the runtimes need different IDs. For example:
 }
 ```
 
-After editing, run `bunx workflows agents sync` and start a new agent session.
-The command updates local `.agents/agents/` and `.claude/agents/` definitions;
+Use `bunx workflows agents models --format codex` to list models from the
+installed Codex runtime. Unknown Codex models warn and resolve to `inherit`,
+with a close match suggestion when possible. Antigravity accepts `inherit`,
+`flash`, and `pro`; an unsupported tier warns and falls back to `inherit`.
+Which Antigravity models are available under each tier depends on the user's plan.
+Claude Code model IDs pass through because it does not expose a local model
+catalog; its `models` command documents aliases such as `sonnet` and `opus`.
+
+After editing, run `bunx workflows agents sync --format <codex|antigravity>`
+and start a new agent session. Codex and Antigravity discover the same
+`.agents/agents/` files, so sync applies one selected runtime's model to that
+shared frontmatter. Run sync again when switching runtimes. The command also
+updates `.claude/agents/` from the Claude settings;
 `workflows init` and `workflows update` run it automatically. Updates preserve
 your workspace config and add missing model defaults to configs created by older
-package versions. Each agent runtime checks whether its configured model
-is available when the agent starts.
+package versions. Each workflow model object can set runtime-specific values;
+omitted runtimes inherit their own default. Resolve the model immediately before
+spawning a role using the active runtime.
 
 You can override a role's base model for a workflow step. Add `workflowModels`
 alongside `agentModels` in the same config file:
@@ -80,11 +96,11 @@ alongside `agentModels` in the same config file:
 {
   "workflowModels": {
     "planning": {
-      "default": "planning-model-a",
-      "backend-developer": "planning-model-b"
+      "default": { "codex": "gpt-6-astra", "antigravity": "pro", "claude": "sonnet" },
+      "backend-developer": { "codex": "gpt-6-sol", "antigravity": "flash", "claude": "opus" }
     },
     "coding": {
-      "backend-developer": "coding-model-c"
+      "backend-developer": { "codex": "gpt-6-astra", "antigravity": "pro", "claude": "sonnet" }
     }
   }
 }
@@ -93,9 +109,11 @@ alongside `agentModels` in the same config file:
 The supported steps are `research`, `prd`, `design`, `meeting`, `planning`,
 `coding`, and `validation`. A role override wins over its step default, which
 wins over its base `agentModels` value. An explicit `inherit` chooses the runtime
-default. Runtime-specific objects must provide both `agents` and `claude` IDs.
-Check a result with `bunx workflows agents resolve planning backend-developer --format
-agents --json`. Step overrides apply when the workflow spawns a new role agent;
+default. Runtime-specific objects may set any of `codex`, `antigravity`, and
+`claude`; omitted keys inherit. A string remains a shorthand for the same model
+value across runtimes, and the old `agents` key remains an alias for Codex.
+Check a result with `bunx workflows agents resolve planning backend-developer
+--format antigravity --json`. Step overrides apply when the workflow spawns a new role agent;
 `agents sync` updates only base agent files. If coding and validation run in one
 agent session, that agent keeps its coding model.
 
@@ -140,7 +158,7 @@ bunx workflows integrity
 bunx workflows check
 bunx workflows auto on|off|toggle|status
 bunx workflows agents sync
-bunx workflows agents resolve planning tech-lead --format agents --json
+bunx workflows agents resolve planning tech-lead --format codex --json
 ```
 
 - `workflows init` sets up a developer project to follow the workflow.

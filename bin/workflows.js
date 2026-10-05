@@ -86,11 +86,15 @@ try {
 		const agentArgs = passthroughArgs(args);
 		if (agentArgs.length === 1 && agentArgs[0] === "sync") {
 			syncAgentModels(resolveRoot(args));
+		} else if (agentArgs[0] === "sync") {
+			syncAgentModelsCommand(resolveRoot(args), agentArgs.slice(1));
+		} else if (agentArgs[0] === "models") {
+			listAgentModels(agentArgs.slice(1));
 		} else if (agentArgs[0] === "resolve") {
 			resolveAgentModelCommand(resolveRoot(args), agentArgs.slice(1));
 		} else {
 			throw new Error(
-				"Usage: workflows agents sync | resolve <step> <role> --format <agents|claude> [--json] [--root <path>].",
+				"Usage: workflows agents sync [--format <codex|antigravity>] | models --format <runtime> | resolve <step> <role> --format <runtime> [--json] [--root <path>].",
 			);
 		}
 	} else {
@@ -372,26 +376,44 @@ function readModelConfiguration(root, config = readWorkspaceConfig(root)) {
 function parseModelSelection(selection, key) {
 	if (typeof selection === "string") {
 		const model = validateModel(selection, key);
-		return { agents: model, claude: model };
+		return { codex: model, antigravity: model, claude: model };
 	}
 	if (!selection || typeof selection !== "object" || Array.isArray(selection)) {
 		throw new Error(
-			`workspace.config.json ${key} has invalid model ${JSON.stringify(selection)}; use a model ID or {"agents":"...","claude":"..."}.`,
+			`workspace.config.json ${key} has invalid model ${JSON.stringify(selection)}; use a model ID or runtime-keyed model values.`,
 		);
 	}
 	const keys = Object.keys(selection);
+	const legacyShape =
+		keys.length === 2 && keys.includes("agents") && keys.includes("claude");
 	if (
-		keys.length !== 2 ||
-		!keys.includes("agents") ||
-		!keys.includes("claude")
+		!keys.length ||
+		keys.some(
+			(runtime) =>
+				!["codex", "agents", "antigravity", "claude"].includes(runtime),
+		) ||
+		(keys.includes("agents") && !legacyShape)
 	) {
 		throw new Error(
-			`workspace.config.json ${key} must contain exactly agents and claude model IDs.`,
+			`workspace.config.json ${key} must use codex, antigravity, and/or claude model keys. Legacy objects must contain both agents and claude keys.`,
 		);
 	}
+	if (keys.includes("agents") && keys.includes("codex")) {
+		throw new Error(
+			`workspace.config.json ${key} cannot contain both agents and codex.`,
+		);
+	}
+	const normalized = {
+		codex: "inherit",
+		antigravity: "inherit",
+		claude: "inherit",
+		...selection,
+	};
+	if (Object.hasOwn(selection, "agents")) normalized.codex = selection.agents;
 	return {
-		agents: validateModel(selection.agents, `${key}.agents`),
-		claude: validateModel(selection.claude, `${key}.claude`),
+		codex: validateModel(normalized.codex, `${key}.codex`),
+		antigravity: validateModel(normalized.antigravity, `${key}.antigravity`),
+		claude: validateModel(normalized.claude, `${key}.claude`),
 	};
 }
 
@@ -407,8 +429,46 @@ function validateModel(model, key) {
 	return model;
 }
 
-function syncAgentModels(root, models = readModelConfiguration(root).models) {
+function syncAgentModelsCommand(root, args) {
+	let format = "codex";
+	for (let index = 0; index < args.length; index += 1) {
+		if (args[index] === "--format") {
+			format = normalizeAgentRuntime(args[++index]);
+		} else {
+			throw new Error(
+				`Unknown agents sync option ${JSON.stringify(args[index])}.`,
+			);
+		}
+	}
+	syncAgentModels(root, readModelConfiguration(root).models, format);
+}
+
+function syncAgentModels(
+	root,
+	models = readModelConfiguration(root).models,
+	format = "codex",
+) {
+	if (!["codex", "antigravity"].includes(format)) {
+		throw new Error("agents sync --format must be codex or antigravity.");
+	}
 	const changes = [];
+	const effectiveModels = Object.fromEntries(
+		roleNames.map((role) => [
+			role,
+			{
+				agents: validateRuntimeModel(
+					format,
+					models[role][format],
+					`base role ${role}`,
+				),
+				claude: validateRuntimeModel(
+					"claude",
+					models[role].claude,
+					`base role ${role}`,
+				),
+			},
+		]),
+	);
 	for (const role of roleNames) {
 		for (const [format, relativePath] of [
 			["agents", `.agents/agents/${role}/agent.md`],
@@ -426,8 +486,12 @@ function syncAgentModels(root, models = readModelConfiguration(root).models) {
 					`${relativePath} must have exactly one model frontmatter line.`,
 				);
 			}
+			const effective =
+				format === "claude"
+					? effectiveModels[role].claude
+					: effectiveModels[role].agents;
 			const updated =
-				frontmatter.replace(/^model:.*$/m, `model: ${models[role][format]}`) +
+				frontmatter.replace(/^model:.*$/m, `model: ${effective}`) +
 				source.slice(frontmatterEnd + 1);
 			changes.push({
 				target,
@@ -441,13 +505,15 @@ function syncAgentModels(root, models = readModelConfiguration(root).models) {
 		if (change.changed) fs.writeFileSync(change.target, change.updated);
 	}
 	for (const role of roleNames) {
+		const configured = models[role];
+		const effectiveAgent = effectiveModels[role].agents;
 		const roleChanges = changes.filter(
 			(change) =>
 				change.relativePath.includes(`/${role}/`) ||
 				change.relativePath.endsWith(`/${role}.md`),
 		);
 		console.log(
-			`${role}: agents=${models[role].agents}, claude=${models[role].claude} (${roleChanges.some((change) => change.changed) ? "updated" : "already up to date"} in both agent formats)`,
+			`${role}: ${format === "codex" ? "agents" : format}=${effectiveAgent}${effectiveAgent !== configured[format] ? ` (configured ${configured[format]})` : ""}, claude=${effectiveModels[role].claude}${effectiveModels[role].claude !== configured.claude ? ` (configured ${configured.claude})` : ""} (${roleChanges.some((change) => change.changed) ? "updated" : "already up to date"} in both agent formats)`,
 		);
 	}
 	console.log(
@@ -480,19 +546,162 @@ function resolveAgentModelCommand(root, args) {
 			`Unknown agent role ${JSON.stringify(role)}; expected ${roleNames.join(", ")}.`,
 		);
 	}
-	if (!["agents", "claude"].includes(format)) {
-		throw new Error("--format must be agents or claude.");
+	if (!isAgentRuntime(format)) {
+		throw new Error(
+			"--format must be codex, antigravity, or claude (agents is a legacy alias for codex).",
+		);
 	}
+	const requestedFormat = format;
+	format = normalizeAgentRuntime(format);
 	const configuration = readModelConfiguration(root);
 	const resolution = resolveAgentModel(configuration, step, role, format);
+	const selectedModel = resolution.model;
+	resolution.model = validateRuntimeModel(
+		format,
+		resolution.model,
+		`${step} step for ${role}`,
+	);
+	if (resolution.model !== selectedModel) {
+		resolution.source = "invalid model fallback (runtime default)";
+	}
+	resolution.format = requestedFormat;
 	console.log(
 		json
 			? JSON.stringify(resolution)
-			: `${resolution.model}${resolution.model === "inherit" ? " (runtime default)" : ""} (source: ${resolution.source}; format: ${format})`,
+			: `${resolution.model}${resolution.model === "inherit" ? " (runtime default)" : ""} (source: ${resolution.source}; runtime: ${format})`,
 	);
 }
 
+function readCodexModelCatalog() {
+	const result = spawnSync("codex", ["debug", "models"], {
+		encoding: "utf8",
+		stdio: ["ignore", "pipe", "ignore"],
+	});
+	if (result.error || result.status !== 0) return null;
+	try {
+		const catalog = JSON.parse(result.stdout);
+		const models = catalog.models
+			?.filter(
+				(model) => model.visibility === "list" || model.visibility === "allon",
+			)
+			.map((model) => model.slug);
+		return Array.isArray(models) ? new Set(models) : null;
+	} catch {
+		return null;
+	}
+}
+
+function listAgentModels(args) {
+	let format;
+	let json = false;
+	for (let index = 0; index < args.length; index += 1) {
+		if (args[index] === "--format") format = args[++index];
+		else if (args[index] === "--json") json = true;
+		else
+			throw new Error(
+				`Unknown agents models option ${JSON.stringify(args[index])}.`,
+			);
+	}
+	if (!isAgentRuntime(format)) {
+		throw new Error(
+			"Usage: workflows agents models --format <codex|antigravity|claude> [--json].",
+		);
+	}
+	format = normalizeAgentRuntime(format);
+	if (format === "antigravity") {
+		const models = ["inherit", "flash", "pro"];
+		console.log(json ? JSON.stringify({ format, models }) : models.join("\n"));
+		return;
+	}
+	if (format === "claude") {
+		const note =
+			"Claude Code has no local model catalog; use its documented aliases such as sonnet or opus, or a full model ID.";
+		console.log(
+			json ? JSON.stringify({ format, catalogAvailable: false, note }) : note,
+		);
+		return;
+	}
+	const catalog = readCodexModelCatalog();
+	if (!catalog)
+		throw new Error("Could not read the installed Codex model catalog.");
+	const models = [...catalog].sort();
+	console.log(json ? JSON.stringify({ format, models }) : models.join("\n"));
+}
+
+function validateRuntimeModel(runtime, model, context) {
+	if (model === "inherit") return model;
+	if (runtime === "antigravity") {
+		if (["flash", "pro"].includes(model)) return model;
+		console.error(
+			`Warning: model ${JSON.stringify(model)} is not a supported Antigravity model tier for ${context}. Supported values are inherit, flash, and pro. Falling back to inherit (runtime default).`,
+		);
+		return "inherit";
+	}
+	if (runtime === "claude") {
+		console.error(
+			`Warning: cannot verify model ${JSON.stringify(model)} for ${context} because Claude Code does not expose a local model catalog; passing it through.`,
+		);
+		return model;
+	}
+	const catalog = readCodexModelCatalog();
+	if (!catalog) {
+		console.error(
+			`Warning: cannot verify Codex model ${JSON.stringify(model)} for ${context}; passing it through.`,
+		);
+		return model;
+	}
+	if (catalog.has(model)) return model;
+	const suggestion = [...catalog]
+		.map((candidate) => ({
+			candidate,
+			distance: editDistance(model, candidate),
+		}))
+		.sort((a, b) => a.distance - b.distance)[0];
+	const hint =
+		suggestion &&
+		suggestion.distance <= Math.max(2, Math.floor(model.length / 3))
+			? ` Did you mean ${JSON.stringify(suggestion.candidate)}?`
+			: "";
+	console.error(
+		`Warning: model ${JSON.stringify(model)} is not in the installed Codex model catalog for ${context}.${hint} Falling back to inherit (runtime default).`,
+	);
+	return "inherit";
+}
+
+function isAgentRuntime(value) {
+	return ["codex", "agents", "antigravity", "claude"].includes(value);
+}
+
+function normalizeAgentRuntime(value) {
+	if (!isAgentRuntime(value)) {
+		throw new Error(
+			"Expected codex, antigravity, or claude (agents is a legacy alias for codex).",
+		);
+	}
+	return value === "agents" ? "codex" : value;
+}
+
+function editDistance(left, right) {
+	const row = Array.from({ length: right.length + 1 }, (_, index) => index);
+	for (let i = 1; i <= left.length; i += 1) {
+		let diagonal = row[0];
+		row[0] = i;
+		for (let j = 1; j <= right.length; j += 1) {
+			const previous = row[j];
+			row[j] = Math.min(
+				row[j] + 1,
+				row[j - 1] + 1,
+				diagonal + (left[i - 1] === right[j - 1] ? 0 : 1),
+			);
+			diagonal = previous;
+		}
+	}
+	return row[right.length];
+}
+
 function resolveAgentModel(configuration, step, role, format) {
+	const requestedFormat = format;
+	format = normalizeAgentRuntime(format);
 	const stepModels = configuration.workflowModels[step] ?? {};
 	for (const [source, selection] of [
 		[`workflowModels.${step}.${role}`, stepModels[role]],
@@ -500,10 +709,22 @@ function resolveAgentModel(configuration, step, role, format) {
 		[`agentModels.${role}`, configuration.models[role]],
 	]) {
 		if (selection) {
-			return { step, role, format, model: selection[format], source };
+			return {
+				step,
+				role,
+				format: requestedFormat,
+				model: selection[format],
+				source,
+			};
 		}
 	}
-	return { step, role, format, model: "inherit", source: "runtime default" };
+	return {
+		step,
+		role,
+		format: requestedFormat,
+		model: "inherit",
+		source: "runtime default",
+	};
 }
 
 function startDashboard(root, args) {
@@ -919,7 +1140,9 @@ Usage:
   workflows check [--root <path>]
   workflows auto on|off|toggle|status [--root <path>]
   workflows agents sync [--root <path>]
-  workflows agents resolve <step> <role> --format <agents|claude> [--json] [--root <path>]
+  workflows agents sync [--format <codex|antigravity>] [--root <path>]
+  workflows agents models --format <codex|antigravity|claude> [--json]
+  workflows agents resolve <step> <role> --format <codex|antigravity|claude> [--json] [--root <path>]
 
 Commands:
   init       Write local workflow shims into a developer project and create a manifest.

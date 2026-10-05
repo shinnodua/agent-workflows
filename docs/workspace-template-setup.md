@@ -114,18 +114,20 @@ The workspace auto-mode setting lives in `workspace.config.json` under
 update` migrates the legacy setting from `.agent-workflows/metadata.json` and
 preserves any unrelated data in that legacy file.
 Role models in `workspace.config.json` are also preserved. Set each role under
-`agentModels` to `inherit`, a model ID, or an object with `agents` and `claude`
-model IDs, then run `bunx workflows agents sync`.
-The command updates both `.agents/agents/` and `.claude/agents/` definitions.
-Initialization and updates synchronize them automatically. Start a new agent
-session after reloading the runtime to use changed models.
+`agentModels` to `inherit`, a model ID, or an object keyed by `codex`,
+`antigravity`, and `claude`, then run
+`bunx workflows agents sync --format codex|antigravity` for the active runtime.
+Codex and Antigravity share `.agents/agents/` files, so sync writes one runtime's
+model there at a time. Claude settings are synchronized to `.claude/agents/`.
+Initialization and updates use the Codex setting for backwards compatibility.
+Start a new agent session after reloading the runtime to use changed models.
 When an older workspace config has no model sections, `workflows update` adds
 the default `inherit` role entries and empty planning/coding sections without
 replacing existing settings.
 For a step-specific model, add `workflowModels.<step>.<role>` or
 `workflowModels.<step>.default` to the same file. The supported steps are
 `research`, `prd`, `design`, `meeting`, `planning`, `coding`, and `validation`.
-Use `bunx workflows agents resolve planning tech-lead --format agents --json`
+Use `bunx workflows agents resolve planning tech-lead --format antigravity --json`
 to inspect the selected model and its config source. Step overrides affect
 newly spawned workflow agents; static role files retain the base model.
 Restart or reload any active agent session after the refresh so it can discover

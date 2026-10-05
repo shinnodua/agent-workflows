@@ -7,11 +7,31 @@
 		"updatedAt": "2026-10-01T08:39:26.255Z"
 	},
 	"agentModels": {
-		"project-manager": "inherit",
-		"tech-lead": "inherit",
-		"ui-ux-designer": "inherit",
-		"backend-developer": "inherit",
-		"frontend-developer": "inherit"
+		"project-manager": {
+			"codex": "inherit",
+			"antigravity": "inherit",
+			"claude": "inherit"
+		},
+		"tech-lead": {
+			"codex": "inherit",
+			"antigravity": "inherit",
+			"claude": "inherit"
+		},
+		"ui-ux-designer": {
+			"codex": "inherit",
+			"antigravity": "inherit",
+			"claude": "inherit"
+		},
+		"backend-developer": {
+			"codex": "inherit",
+			"antigravity": "inherit",
+			"claude": "inherit"
+		},
+		"frontend-developer": {
+			"codex": "inherit",
+			"antigravity": "inherit",
+			"claude": "inherit"
+		}
 	},
 	"workflowModels": {
 		"planning": {},

@@ -29,15 +29,14 @@ All five workspace roles currently inherit the coordinator's model. A developer 
 ## Goals
 
 - Let developers specify a model independently for each of the five workspace roles in `workspace.config.json`.
-- Apply the configuration to both agent discovery formats.
+- Apply the configuration to the relevant runtime agent definitions.
 - Keep choices across package updates.
 - Let a workflow step override a role's base model when the coordinator spawns that role for the step.
 - Store `autoMode.enabled` and its update timestamp in `workspace.config.json` alongside model settings.
 
 ## Non-Goals
 
-- Automatically select models or verify provider availability.
-- Change the model of an already running agent session.
+- Change a running agent's model.
 
 ## Users And Use Cases
 
@@ -48,7 +47,7 @@ All five workspace roles currently inherit the coordinator's model. A developer 
 
 Functional requirements:
 
-- `workspace.config.json` has an `agentModels` map with exact keys `project-manager`, `tech-lead`, `ui-ux-designer`, `backend-developer`, and `frontend-developer`. Each value is a nonempty single-line model ID, `inherit`, or an object with separate `agents` and `claude` model IDs.
+- `workspace.config.json` has an `agentModels` map with exact role keys `project-manager`, `tech-lead`, `ui-ux-designer`, `backend-developer`, and `frontend-developer`. Each value is a model ID, `inherit`, or an object keyed by runtime (`codex`, `antigravity`, and/or `claude`).
 - A CLI command applies configured values to local Codex/Antigravity and Claude Code agent definitions.
 - Init and update apply the map automatically after validating it. Sync validates and prepares all target files before writing any agent definition.
 - Update preserves project-specific config values, including when an older manifest lists `workspace.config.json` as managed.
@@ -56,9 +55,14 @@ Functional requirements:
 - Init, update, and auto-mode commands migrate legacy `.agent-workflows/metadata.json.autoMode` into `workspace.config.json` when no canonical setting exists. After migration, retain unrelated legacy metadata but do not use it as the active setting.
 - A missing role value defaults to `inherit` for compatibility.
 - Invalid config fails with an actionable error naming the path and invalid key or value before changing agent definitions.
-- `workflowModels` may specify a `default` selection and individual role selections for `research`, `prd`, `design`, `meeting`, `planning`, `coding`, and `validation`. Selections accept the same string or runtime-specific object shape as base role models. Runtime-specific objects must contain both `agents` and `claude` values.
-- Model resolution follows step role, step default, base role, then `inherit`. An explicit `inherit` is an override and selects the runtime default.
-- `workflows agents resolve <step> <role> --format <agents|claude> --json` returns the effective model and its source. Workflow coordinators use that result immediately before spawning the role when their runtime supports model overrides. The query rejects unknown names and invalid config with a nonzero exit.
+- `workflowModels` may specify a `default` selection and individual role selections for `research`, `prd`, `design`, `meeting`, `planning`, `coding`, and `validation`. Selections accept the same string or runtime-keyed object shape as base role models.
+- Model resolution follows step role, step default, base role, then `inherit` for the selected runtime. An explicit `inherit` is an override and selects that runtime's default.
+- `workflows agents resolve <step> <role> --format <codex|antigravity|claude> --json` returns the effective model and its source. Workflow coordinators use that result before spawning the role when their runtime supports per-spawn overrides.
+- Runtime model choices are validated at sync and step resolution. Codex uses its installed model catalog; Antigravity accepts `inherit`, `flash`, and `pro`; Claude IDs are passed through with a validation warning.
+- Antigravity plan entitlements determine which concrete models are available in each tier and cannot be checked by the workspace CLI.
+- Config selections can be keyed separately for `codex`, `antigravity`, and `claude`. Antigravity's documented custom-agent tiers are `inherit`, `flash`, and `pro`; invalid tiers warn and resolve to `inherit`.
+- Since Codex and Antigravity discover the same `.agents/agents/` agent files, `workflows agents sync --format <codex|antigravity>` selects which runtime's base model is written to that shared frontmatter. Step resolution accepts a runtime name so workflows can choose the correct model before spawning.
+- When the selected runtime does not expose a local catalog, the model is passed through with a warning that availability could not be checked; do not invent a stale built-in allowlist.
 
 Non-functional requirements:
 
@@ -80,9 +84,9 @@ Non-functional requirements:
 
 - Shared types or packages: None.
 - API endpoints: None.
-- Events or runtime interfaces: A role string is written to both local agent formats; a role object writes its `agents` and `claude` values separately.
+- Events or runtime interfaces: Codex and Antigravity share `.agents/agents/` frontmatter, so sync selects one of those runtimes at a time; Claude has separate `.claude/agents/` frontmatter.
 - Compatibility requirements: Omitted values retain `inherit` behavior.
-- Step selection contract: `workflowModels.<step>.default` supplies a step-wide choice; `workflowModels.<step>.<role>` can override it. Static agent files retain the base role model because their frontmatter has no step context. A workflow object includes both format keys, and `inherit` at any selected level stops fallback.
+- Step selection contract: `workflowModels.<step>.default` supplies a step-wide choice; `workflowModels.<step>.<role>` can override it. Static agent files retain the base role model because their frontmatter has no step context. Runtime-keyed objects may omit runtimes, which inherit; `inherit` at any selected level stops fallback.
 
 ## UX Notes
 
@@ -92,32 +96,32 @@ This is a CLI and file configuration flow. Clear documentation and errors are th
 {
   "agentModels": {
     "project-manager": "inherit",
-    "tech-lead": { "agents": "your-agents-model", "claude": "your-claude-model" },
+    "tech-lead": { "codex": "gpt-6-astra", "antigravity": "pro", "claude": "sonnet" },
     "ui-ux-designer": "inherit",
     "backend-developer": "inherit",
     "frontend-developer": "inherit"
   },
   "workflowModels": {
     "planning": {
-      "default": "planning-model-a",
-      "backend-developer": "planning-model-b"
+      "default": { "codex": "gpt-6-astra", "antigravity": "pro", "claude": "sonnet" },
+      "backend-developer": { "codex": "gpt-6-sol", "antigravity": "flash", "claude": "opus" }
     },
     "coding": {
-      "backend-developer": "coding-model-c",
-      "frontend-developer": { "agents": "coding-agents-model", "claude": "coding-claude-model" }
+      "backend-developer": { "codex": "gpt-6-astra", "antigravity": "pro", "claude": "sonnet" },
+      "frontend-developer": { "codex": "gpt-6-sol", "antigravity": "flash", "claude": "sonnet" }
     }
   }
 }
 ```
 
-Sync reports each role's applied model and whether agent files changed or were already current. Runtime availability of a selected model is checked when that runtime starts a new agent.
+Sync reports each role's applied model and whether agent files changed or were already current. Unknown Codex model IDs and Antigravity tiers warn and use `inherit`; Claude IDs pass through with a warning because its CLI does not expose a local catalog.
 
 The CLI shows the effective model, agent format, and config source. A runtime that cannot change model when spawning an agent reports that it could not apply the step override, with the step and role. A validation override is used only for a separately spawned validation agent; validation in the same coding session retains the coding model.
 
 ## Acceptance Criteria
 
-- Distinct configured models appear in both local role agent formats after sync.
-- Runtime-specific role values can differ between the two formats.
+- Distinct configured models appear in the selected runtime's role files after sync.
+- Codex, Antigravity, and Claude Code model values can differ for the same role.
 - Unconfigured roles use `inherit`.
 - `workflows update` leaves configured values in `workspace.config.json` and reapplies them to refreshed agent files.
 - An existing config without model settings gains visible default sections after `workflows update`; partially configured model sections gain only missing defaults. Running update again does not rewrite an already complete config.
@@ -134,7 +138,7 @@ The CLI shows the effective model, agent format, and config source. A runtime th
 
 ## Risks And Tradeoffs
 
-- Runtime model names vary; the CLI accepts valid scalar names and runtime remains the authority for availability.
+- Runtime model names vary. The Codex catalog is the authority for Codex IDs; Antigravity's documented model tiers are checked locally; Claude does not expose a catalog for preflight checks.
 - A config edit alone does not update static agent frontmatter; documentation instructs the sync step.
 
 ## Open Questions

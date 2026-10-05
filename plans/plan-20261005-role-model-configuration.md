@@ -42,7 +42,10 @@ In scope:
 - Add `workflows agents sync` with validation, idempotent writes, and useful output.
 - Run synchronization after init/update and document the flow.
 - Add focused CLI tests.
-- Add `workflowModels` step defaults and role overrides, plus `workflows agents resolve <step> <role> --format <agents|claude>`.
+- Add `workflowModels` step defaults and role overrides, plus `workflows agents resolve <step> <role> --format <codex|antigravity|claude>`.
+- List Codex's installed model catalog; validate Codex selections during sync and launch-time resolution, warning and falling back to `inherit` for unknown IDs, with a close-match hint.
+- Extend runtime selection to Codex, Antigravity, and Claude. Validate Antigravity tier names; allow the shared `.agents` frontmatter to be synchronized for either Codex or Antigravity.
+- Preserve pass-through behavior for formats without a queryable local catalog and clearly report that availability could not be checked.
 - Update agent instructions to resolve the assigned workflow step at spawn time and explain when a runtime cannot apply an override.
 
 Out of scope:
@@ -57,7 +60,7 @@ Out of scope:
 
 ## Cross-Repo Design
 
-- Data contracts: `workspace.config.json.agentModels` maps five role slugs to strings or `{agents, claude}` objects; `workflowModels` maps seven workflow steps to `default` and role selections in the same shape. Runtime-specific objects require both format keys.
+- Data contracts: `workspace.config.json.agentModels` maps five role slugs to strings or `{codex, antigravity, claude}` runtime objects; `workflowModels` maps seven workflow steps to `default` and role selections in the same shape. Omitted runtime keys inherit.
 - Shared packages or APIs: None.
 - Runtime flow: Static agent files receive base models. At assignment time, the coordinator queries the effective step model and passes it as a spawn-time override when supported.
 - Dependency direction: Agent formats derive from workspace config; no product submodule dependency.

@@ -118,3 +118,9 @@ An initialized workspace may already have `workspace.config.json` from a package
 ## Follow-Up: Centralizing Auto Mode
 
 Auto mode is stored separately in `.agent-workflows/metadata.json`, while role and workflow models live in `workspace.config.json`. Move the canonical `autoMode.enabled` and `updatedAt` settings into `workspace.config.json`. During init/update and auto-mode commands, migrate the legacy value when the new config has no value, preserve any unrelated legacy metadata, and stop reading/writing legacy auto mode once migration succeeds. New workspaces should expose `autoMode.enabled: false` in the main config.
+
+## Follow-Up: Model Name Discovery And Fallback
+
+The installed Codex CLI exposes its model catalog through `codex debug models`, so the workflow CLI can list that catalog and check Codex model IDs immediately before a role is spawned. If an ID is absent, warn, suggest a close match when possible, and resolve to `inherit` so the role starts with the runtime default. Claude Code documents model aliases and full model IDs, but does not expose an equivalent local catalog command; warn that availability cannot be checked and pass the configured ID through. This avoids a hard-coded catalog that would drift from installed runtimes.
+
+Antigravity also discovers role Markdown files under `.agents/agents/`, the same files Codex uses. Its custom-agent `model` frontmatter is a tier (`inherit`, `flash`, or `pro`), not a Codex model slug. The shared source path means static frontmatter can hold only one runtime's base selection at a time; provide an explicit sync format and require workflow resolution to name its runtime. Antigravity tier values can be checked locally against the documented choices.
