@@ -53,8 +53,9 @@ Initialized consuming workspaces use a hybrid source model:
   the source of truth for reusable workflow behavior.
 - Project-owned files stay local: `project/`, `prds/`, `plans/`, `designs/`,
   `research/`, `meeting-logs/`, `docs/`, `modules/`, and
-`workspace.config.json`. Workspace-local auto mode is stored separately in
-`.agent-workflows/metadata.json` and is preserved by `workflows update`.
+  `workspace.config.json`. Auto mode is stored there under `autoMode`.
+  `workflows update` migrates an older `.agent-workflows/metadata.json` setting
+  and retains unrelated data from that legacy file.
 - `workflows update` refreshes local shims when commands, skills, or reusable
   references are added, removed, or renamed.
 
@@ -145,10 +146,10 @@ When applying the workspace to a new project, replace `project/` and
 
 Auto mode defaults to off. Use `$auto-mode on|off|toggle|status` in an agent chat
 or `workflows auto on|off|toggle|status [--root <path>]` in a shell. The setting
-lives in `.agent-workflows/metadata.json`, so `workflows update` does not reset
-it. The agent checks this metadata at the start of each developer-initiated
-feature or implementation request and follows `.agents/skills/auto-mode/SKILL.md`
-when enabled.
+lives in `workspace.config.json` under `autoMode`. Older metadata files migrate
+during `workflows update` or the next auto-mode command. The agent checks this
+setting at the start of each developer-initiated feature or implementation
+request and follows `.agents/skills/auto-mode/SKILL.md` when enabled.
 
 With auto mode on, the agent advances through research → PRD → design → sprint
 meeting → PRD approval → root and affected submodule plans → plan approval →
@@ -316,7 +317,7 @@ new agent session for changed base models to take effect.
   - Codex slash prompt: `.codex/prompts/auto-mode.md`.
   - Command spec: `commands/auto-mode.md`.
   - CLI equivalent: `workflows auto on|off|toggle|status [--root <path>]`.
-  - Auto mode is off by default and persists in workspace metadata.
+  - Auto mode is off by default and persists in `workspace.config.json` under `autoMode`.
 - `$project-setup`, `project-setup`, or `/project-setup`
   - Skill: `.agents/skills/project-setup/SKILL.md`.
   - Codex slash prompt: `.codex/prompts/project-setup.md`.

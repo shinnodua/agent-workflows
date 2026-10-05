@@ -120,7 +120,9 @@ bunx workflows auto on
 
 Check or change it later with `bunx workflows auto status`, `off`, or `toggle`,
 or use `/auto-mode on|off|toggle|status` in the agent chat. Auto mode is off by
-default and is saved in `.agent-workflows/metadata.json`. It runs research,
+default and is saved in `workspace.config.json` under `autoMode`. Older
+`.agent-workflows/metadata.json` settings migrate when you run `workflows update`
+or an auto-mode command. It runs research,
 PRD, design, sprint meeting, PRD and plan approvals, implementation, and
 validation without routine approval prompts. The agent still asks for decisions
 only the developer can answer.

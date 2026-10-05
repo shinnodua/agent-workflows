@@ -37,8 +37,8 @@ unnecessary handoffs and interrupts implementation.
 
 - Let a developer turn auto mode on, off, or inspect its status from an agent
   command and the `workflows` CLI.
-- Persist the setting in workspace-local metadata across agent turns and package
-  updates; default to off when the setting is absent.
+- Persist the setting in `workspace.config.json` across agent turns and package
+  updates; migrate older metadata settings and default to off when absent.
 - For a developer-initiated feature request with auto mode on, complete:
   research → PRD → design → sprint meeting → PRD approval → root and affected
   submodule plans → plan approval → implementation → validation.
@@ -68,8 +68,8 @@ Functional requirements:
   auto mode in the current workspace.
 - `workflows auto on|off|toggle|status [--root <path>]` provides the same setting from
   the shell.
-- Workspace-local `.agent-workflows/metadata.json` stores the Boolean setting.
-  Package updates must not overwrite it. Missing metadata means off.
+- `workspace.config.json` stores the Boolean setting under `autoMode.enabled`.
+  Package updates must not overwrite it. Missing settings default to off.
 - Enabling auto mode authorizes intermediate PRD and plan status changes and
   continuation for the specific feature request the developer starts; approval
   metadata must record that auto mode was the authority.
@@ -82,16 +82,16 @@ Functional requirements:
 
 Non-functional requirements:
 
-- Invalid or malformed metadata must fail closed as off and show a useful error
-  to the command caller.
-- CLI metadata writes must be atomic and preserve unrelated metadata fields.
+- Invalid or malformed config must fail closed with a useful error to the
+  command caller.
+- CLI config writes must be atomic and preserve unrelated workspace config.
 - The agent may resume an in-progress request from verified existing artifacts
   without duplicating them.
 
 ## User Flows
 
 1. Developer runs `$auto-mode on` or `workflows auto on`.
-2. A later feature request begins; the agent reads workspace metadata.
+2. A later feature request begins; the agent reads `workspace.config.json`.
 3. The agent runs each stage in order and records artifacts and validation.
 4. If a question requires developer input, the agent asks, waits, records the
    answer, and resumes.
@@ -107,22 +107,24 @@ Non-functional requirements:
 
 - Shared types or packages: `None`
 - API endpoints: `None`
-- Events or runtime interfaces: `.agent-workflows/metadata.json` contains
-  `autoMode.enabled: boolean` and may contain other workspace metadata.
-- Compatibility requirements: Older workspaces without the metadata file remain
-  in manual mode; `workflows update` preserves the metadata file.
+- Events or runtime interfaces: `workspace.config.json` contains
+  `autoMode.enabled: boolean` and optional `updatedAt`. Existing
+  `.agent-workflows/metadata.json.autoMode` values migrate during update or an
+  auto-mode command; unrelated metadata remains in the legacy file.
+- Compatibility requirements: Older workspace auto-mode values migrate from
+  `.agent-workflows/metadata.json`; new workspaces default to manual mode.
 
 ## UX Notes
 
-The toggle command reports the effective state and metadata location. Auto
+The toggle command reports the effective state and config location. Auto
 workflow progress remains visible in chat with concise stage updates. A paused
 human-only question names the decision required and the stage it blocks.
 
 ## Acceptance Criteria
 
 - CLI on, off, and status persist and report the correct workspace-local state.
-- Updating an initialized workspace leaves auto mode and unrelated metadata
-  unchanged.
+- Updating an initialized workspace leaves auto mode unchanged and migrates
+  older metadata without discarding unrelated metadata.
 - Agent command shims and skill are packaged for both Codex and Claude Code.
 - Auto mode instructions include every requested stage and remove routine
   approval and stage-continuation prompts while enabled.

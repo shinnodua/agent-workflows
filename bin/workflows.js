@@ -105,10 +105,20 @@ try {
 
 function initWorkspace(root) {
 	ensureDirectory(root);
-	const scaffolded = copyPaths(root, scaffoldOnlyPaths, { overwrite: false });
+	const configExisted = fs.existsSync(path.join(root, "workspace.config.json"));
+	const scaffolded = copyPaths(
+		root,
+		scaffoldOnlyPaths.filter(
+			(relativePath) => relativePath !== "workspace.config.json",
+		),
+		{ overwrite: false },
+	);
 	const prepared = prepareWorkspaceConfig(root);
 	const { models } = readModelConfiguration(root, prepared.config);
+	validateAutoModeConfig(prepared.config.autoMode);
 	if (prepared.changed) writeWorkspaceConfig(root, prepared.config);
+	if (!configExisted) scaffolded.push("workspace.config.json");
+	cleanupLegacyAutoMode(root);
 	const managed = copyPaths(root, managedPaths, { overwrite: false });
 	syncAgentModels(root, models);
 	mergePackageScripts(root);
@@ -130,10 +140,12 @@ function updateWorkspace(root) {
 	const manifest = loadManifest(root);
 	const prepared = prepareWorkspaceConfig(root);
 	const { models } = readModelConfiguration(root, prepared.config);
+	validateAutoModeConfig(prepared.config.autoMode);
 	const paths = [
 		...new Set([...(manifest?.managedPaths ?? []), ...managedPaths]),
 	].filter((relativePath) => relativePath !== "workspace.config.json");
 	if (prepared.changed) writeWorkspaceConfig(root, prepared.config);
+	cleanupLegacyAutoMode(root);
 	const managed = copyPaths(root, paths, { overwrite: true });
 	syncAgentModels(root, models);
 	writeManifest(root);
@@ -165,13 +177,21 @@ function prepareWorkspaceConfig(root) {
 	const configPath = path.join(root, "workspace.config.json");
 	const defaults = readJson(path.join(packageRoot, "workspace.config.json"));
 	if (!fs.existsSync(configPath)) {
-		return { config: defaults, changed: true };
+		const config = structuredClone(defaults);
+		config.autoMode = readLegacyAutoMode(root) ?? { enabled: false };
+		return { config, changed: true };
 	}
 	const config = readWorkspaceConfig(root);
 	if (!config || typeof config !== "object" || Array.isArray(config)) {
 		throw new Error("workspace.config.json must contain a JSON object.");
 	}
 	let changed = false;
+	if (!Object.hasOwn(config, "autoMode")) {
+		const legacy = readLegacyAutoMode(root);
+		config.autoMode = legacy ?? { enabled: false };
+		changed = true;
+	}
+	validateAutoModeConfig(config.autoMode);
 	if (!Object.hasOwn(config, "agentModels")) {
 		config.agentModels = { ...defaults.agentModels };
 		changed = true;
@@ -203,6 +223,67 @@ function prepareWorkspaceConfig(root) {
 		}
 	}
 	return { config, changed };
+}
+
+function readLegacyAutoMode(root) {
+	const target = path.join(root, metadataPath);
+	if (!fs.existsSync(target)) return undefined;
+	let metadata;
+	try {
+		metadata = readJson(target);
+	} catch (error) {
+		throw new Error(
+			`${metadataPath} could not be read during migration: ${error instanceof Error ? error.message : String(error)}`,
+		);
+	}
+	if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+		throw new Error(
+			`${metadataPath} must contain a JSON object during migration.`,
+		);
+	}
+	if (!Object.hasOwn(metadata, "autoMode")) return undefined;
+	validateAutoModeConfig(metadata.autoMode, metadataPath);
+	return structuredClone(metadata.autoMode);
+}
+
+function validateAutoModeConfig(autoMode, source = "workspace.config.json") {
+	if (
+		!autoMode ||
+		typeof autoMode !== "object" ||
+		Array.isArray(autoMode) ||
+		typeof autoMode.enabled !== "boolean" ||
+		(autoMode.updatedAt !== undefined && typeof autoMode.updatedAt !== "string")
+	) {
+		throw new Error(`${source} has invalid autoMode configuration.`);
+	}
+}
+
+function cleanupLegacyAutoMode(root) {
+	const target = path.join(root, metadataPath);
+	if (!fs.existsSync(target)) return;
+	let metadata;
+	try {
+		metadata = readJson(target);
+	} catch {
+		return;
+	}
+	if (!metadata || typeof metadata !== "object" || Array.isArray(metadata))
+		return;
+	if (!Object.hasOwn(metadata, "autoMode")) return;
+	delete metadata.autoMode;
+	if (Object.keys(metadata).length === 0) {
+		fs.unlinkSync(target);
+		return;
+	}
+	const temporary = `${target}.${process.pid}.${Date.now()}.tmp`;
+	try {
+		fs.writeFileSync(temporary, `${JSON.stringify(metadata, null, "\t")}\n`, {
+			flag: "wx",
+		});
+		fs.renameSync(temporary, target);
+	} finally {
+		if (fs.existsSync(temporary)) fs.unlinkSync(temporary);
+	}
 }
 
 function writeWorkspaceConfig(root, config) {
@@ -490,55 +571,27 @@ function autoMode(root, args) {
 		);
 	}
 
-	const target = path.join(root, metadataPath);
-	let metadata;
-	try {
-		metadata = fs.existsSync(target) ? readJson(target) : {};
-	} catch {
-		throw new Error(`${metadataPath} is not valid JSON; auto mode is off.`);
-	}
-	if (
-		!metadata ||
-		typeof metadata !== "object" ||
-		Array.isArray(metadata) ||
-		(metadata.autoMode !== undefined &&
-			(metadata.autoMode === null ||
-				typeof metadata.autoMode !== "object" ||
-				Array.isArray(metadata.autoMode) ||
-				typeof metadata.autoMode.enabled !== "boolean"))
-	) {
-		throw new Error(`${metadataPath} has invalid autoMode metadata.`);
-	}
+	const prepared = prepareWorkspaceConfig(root);
+	const config = prepared.config;
+	validateAutoModeConfig(config.autoMode);
+	const target = path.join(root, "workspace.config.json");
 
 	if (action !== "status") {
 		const enabled =
-			action === "toggle"
-				? !(metadata.autoMode?.enabled ?? false)
-				: action === "on";
-		const updated = {
-			...metadata,
-			autoMode: {
-				...metadata.autoMode,
-				enabled,
-				updatedAt: new Date().toISOString(),
-			},
+			action === "toggle" ? !config.autoMode.enabled : action === "on";
+		config.autoMode = {
+			...config.autoMode,
+			enabled,
+			updatedAt: new Date().toISOString(),
 		};
-		fs.mkdirSync(path.dirname(target), { recursive: true });
-		const temporary = `${target}.${process.pid}.${Date.now()}.tmp`;
-		try {
-			fs.writeFileSync(temporary, `${JSON.stringify(updated, null, "\t")}\n`, {
-				flag: "wx",
-			});
-			fs.renameSync(temporary, target);
-		} finally {
-			if (fs.existsSync(temporary)) fs.unlinkSync(temporary);
-		}
+		writeWorkspaceConfig(root, config);
+	} else if (prepared.changed) {
+		writeWorkspaceConfig(root, config);
 	}
+	cleanupLegacyAutoMode(root);
 
 	const enabled =
-		action === "status"
-			? (metadata.autoMode?.enabled ?? false)
-			: action === "on" || (action === "toggle" && !metadata.autoMode?.enabled);
+		action === "status" ? config.autoMode.enabled : config.autoMode.enabled;
 	console.log(`Auto mode: ${enabled ? "on" : "off"} (${target})`);
 }
 

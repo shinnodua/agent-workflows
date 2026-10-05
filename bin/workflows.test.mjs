@@ -14,22 +14,25 @@ function run(root, ...args) {
 	});
 }
 
-test("auto mode persists, toggles, and survives workspace updates", (context) => {
+test("auto mode persists in workspace config and survives workflow updates", (context) => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-workflows-auto-"));
 	context.after(() => fs.rmSync(root, { recursive: true, force: true }));
-	const metadataPath = path.join(root, ".agent-workflows/metadata.json");
+	const configPath = path.join(root, "workspace.config.json");
 
 	assert.match(run(root, "auto", "status").stdout, /Auto mode: off/);
-	assert.equal(fs.existsSync(metadataPath), false);
+	assert.equal(
+		JSON.parse(fs.readFileSync(configPath, "utf8")).autoMode.enabled,
+		false,
+	);
 	assert.equal(run(root, "init").status, 0);
 	assert.equal(run(root, "auto", "on").status, 0);
-	const metadata = JSON.parse(fs.readFileSync(metadataPath, "utf8"));
-	metadata.projectNote = "keep this";
-	fs.writeFileSync(metadataPath, JSON.stringify(metadata));
+	const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+	config.projectNote = "keep this";
+	fs.writeFileSync(configPath, JSON.stringify(config));
 	assert.equal(run(root, "update").status, 0);
 	assert.match(run(root, "auto", "status").stdout, /Auto mode: on/);
 	assert.equal(
-		JSON.parse(fs.readFileSync(metadataPath, "utf8")).projectNote,
+		JSON.parse(fs.readFileSync(configPath, "utf8")).projectNote,
 		"keep this",
 	);
 	assert.match(run(root, "auto", "toggle").stdout, /Auto mode: off/);
@@ -45,16 +48,77 @@ test("auto mode persists, toggles, and survives workspace updates", (context) =>
 	);
 });
 
-test("invalid metadata fails closed without overwriting it", (context) => {
+test("legacy auto mode migrates to workspace config and keeps unrelated metadata", (context) => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-workflows-auto-"));
 	context.after(() => fs.rmSync(root, { recursive: true, force: true }));
-	const directory = path.join(root, ".agent-workflows");
-	fs.mkdirSync(directory);
-	const target = path.join(directory, "metadata.json");
+	assert.equal(run(root, "init").status, 0);
+	const configPath = path.join(root, "workspace.config.json");
+	const configBeforeMigration = JSON.parse(fs.readFileSync(configPath, "utf8"));
+	delete configBeforeMigration.autoMode;
+	fs.writeFileSync(configPath, JSON.stringify(configBeforeMigration));
+	const legacyPath = path.join(root, ".agent-workflows/metadata.json");
+	fs.mkdirSync(path.dirname(legacyPath), { recursive: true });
+	fs.writeFileSync(
+		legacyPath,
+		JSON.stringify({
+			autoMode: { enabled: true, updatedAt: "2026-10-01T08:39:26.255Z" },
+			projectNote: "preserve me",
+		}),
+	);
+	assert.equal(run(root, "update").status, 0);
+	const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+	assert.deepEqual(config.autoMode, {
+		enabled: true,
+		updatedAt: "2026-10-01T08:39:26.255Z",
+	});
+	assert.deepEqual(JSON.parse(fs.readFileSync(legacyPath, "utf8")), {
+		projectNote: "preserve me",
+	});
+	assert.match(run(root, "auto", "status").stdout, /Auto mode: on/);
+
+	const explicitConfig = { ...config, autoMode: { enabled: false } };
+	fs.writeFileSync(configPath, JSON.stringify(explicitConfig));
+	fs.writeFileSync(
+		legacyPath,
+		JSON.stringify({ autoMode: { enabled: true }, projectNote: "keep me too" }),
+	);
+	assert.equal(run(root, "update").status, 0);
+	assert.match(run(root, "auto", "status").stdout, /Auto mode: off/);
+	assert.deepEqual(JSON.parse(fs.readFileSync(legacyPath, "utf8")), {
+		projectNote: "keep me too",
+	});
+
+	const freshRoot = fs.mkdtempSync(
+		path.join(os.tmpdir(), "agent-workflows-auto-init-"),
+	);
+	context.after(() => fs.rmSync(freshRoot, { recursive: true, force: true }));
+	const freshLegacyPath = path.join(
+		freshRoot,
+		".agent-workflows/metadata.json",
+	);
+	fs.mkdirSync(path.dirname(freshLegacyPath), { recursive: true });
+	fs.writeFileSync(
+		freshLegacyPath,
+		JSON.stringify({ autoMode: { enabled: true } }),
+	);
+	assert.equal(run(freshRoot, "init").status, 0);
+	assert.equal(
+		JSON.parse(
+			fs.readFileSync(path.join(freshRoot, "workspace.config.json"), "utf8"),
+		).autoMode.enabled,
+		true,
+	);
+	assert.equal(fs.existsSync(freshLegacyPath), false);
+});
+
+test("invalid auto mode config fails closed without overwriting it", (context) => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-workflows-auto-"));
+	context.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const target = path.join(root, "workspace.config.json");
 	fs.writeFileSync(target, '{"autoMode":{"enabled":"yes"}}');
 	const result = run(root, "auto", "on");
 	assert.equal(result.status, 1);
-	assert.match(result.stderr, /invalid autoMode metadata/);
+	assert.match(result.stderr, /invalid autoMode configuration/);
 	assert.equal(
 		fs.readFileSync(target, "utf8"),
 		'{"autoMode":{"enabled":"yes"}}',
@@ -62,7 +126,7 @@ test("invalid metadata fails closed without overwriting it", (context) => {
 	fs.writeFileSync(target, "{broken");
 	const malformed = run(root, "auto", "status");
 	assert.equal(malformed.status, 1);
-	assert.match(malformed.stderr, /not valid JSON; auto mode is off/);
+	assert.match(malformed.stderr, /could not be read as JSON/);
 });
 
 test("role models sync to both agent formats and survive legacy updates", (context) => {

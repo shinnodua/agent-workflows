@@ -108,9 +108,11 @@ The update command refreshes workflow-owned shims and leaves project profile
 files, existing PRDs, plans, designs, research, meeting logs, docs, and
 submodules under developer control. Set `AGENT_WORKFLOWS_AUTO_UPDATE=1` for the
 install command if you want its lifecycle script to perform the refresh.
-The workspace auto-mode setting in `.agent-workflows/metadata.json` is also
-preserved. Use `bunx workflows auto on|off|toggle|status` or the agent
-`/auto-mode` command to change or inspect it; the default is off.
+The workspace auto-mode setting lives in `workspace.config.json` under
+`autoMode`. Use `bunx workflows auto on|off|toggle|status` or the agent
+`/auto-mode` command to change or inspect it; the default is off. `workflows
+update` migrates the legacy setting from `.agent-workflows/metadata.json` and
+preserves any unrelated data in that legacy file.
 Role models in `workspace.config.json` are also preserved. Set each role under
 `agentModels` to `inherit`, a model ID, or an object with `agents` and `claude`
 model IDs, then run `bunx workflows agents sync`.

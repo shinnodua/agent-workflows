@@ -114,3 +114,7 @@ The developer clarified that one role may need model A while joining planning an
 ## Follow-Up: Updating Older Workspace Configs
 
 An initialized workspace may already have `workspace.config.json` from a package version before model settings existed. The update command correctly preserves the file, but therefore leaves its new model sections absent. During update, merge the package's default `agentModels` role entries and `workflowModels` step skeleton into the existing JSON, preserving configured values and unrelated fields. Validate before writing and leave invalid JSON untouched.
+
+## Follow-Up: Centralizing Auto Mode
+
+Auto mode is stored separately in `.agent-workflows/metadata.json`, while role and workflow models live in `workspace.config.json`. Move the canonical `autoMode.enabled` and `updatedAt` settings into `workspace.config.json`. During init/update and auto-mode commands, migrate the legacy value when the new config has no value, preserve any unrelated legacy metadata, and stop reading/writing legacy auto mode once migration succeeds. New workspaces should expose `autoMode.enabled: false` in the main config.

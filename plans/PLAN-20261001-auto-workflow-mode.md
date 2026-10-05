@@ -23,7 +23,8 @@ through the requested stages without routine developer approvals.
 
 - Research brief: `None`
 - Key planning implications:
-  - `.agent-workflows/` is already the workspace-local metadata area.
+- `workspace.config.json` is the source of truth for workspace settings; older
+  `.agent-workflows/metadata.json` state needs a one-time migration.
   - `bin/workflows.js` owns CLI entry points and packaged discovery shims.
   - Skills own stage behavior; workflow guidance must tell agents to read the
     setting and apply the auto path.
@@ -51,7 +52,7 @@ Out of scope:
 
 ## Cross-Repo Design
 
-- Data contracts: `.agent-workflows/metadata.json` stores `autoMode.enabled`.
+- Data contracts: `workspace.config.json` stores `autoMode.enabled`; legacy metadata migrates to it.
 - Shared packages or APIs: None.
 - Runtime flow: Agent reads state; if enabled and a feature request is active,
   it runs the ordered workflow and resumes after human-only answers.
@@ -59,7 +60,7 @@ Out of scope:
 
 ## Sequence
 
-1. Add an atomic CLI toggle and status reader for workspace metadata.
+1. Add an atomic CLI toggle and status reader for `workspace.config.json`.
 2. Add the auto-mode skill and Codex, Claude, and command shims.
 3. Update stage skills, workflow rules, templates, and user documentation.
 4. Test CLI persistence and update preservation; run workspace checks.

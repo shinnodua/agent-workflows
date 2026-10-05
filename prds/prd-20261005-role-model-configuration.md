@@ -32,6 +32,7 @@ All five workspace roles currently inherit the coordinator's model. A developer 
 - Apply the configuration to both agent discovery formats.
 - Keep choices across package updates.
 - Let a workflow step override a role's base model when the coordinator spawns that role for the step.
+- Store `autoMode.enabled` and its update timestamp in `workspace.config.json` alongside model settings.
 
 ## Non-Goals
 
@@ -52,6 +53,7 @@ Functional requirements:
 - Init and update apply the map automatically after validating it. Sync validates and prepares all target files before writing any agent definition.
 - Update preserves project-specific config values, including when an older manifest lists `workspace.config.json` as managed.
 - Update adds missing default `agentModels` role entries and `workflowModels` sections to an older `workspace.config.json`, using `inherit` for base roles and empty planning/coding step objects, while preserving existing values and unrelated fields.
+- Init, update, and auto-mode commands migrate legacy `.agent-workflows/metadata.json.autoMode` into `workspace.config.json` when no canonical setting exists. After migration, retain unrelated legacy metadata but do not use it as the active setting.
 - A missing role value defaults to `inherit` for compatibility.
 - Invalid config fails with an actionable error naming the path and invalid key or value before changing agent definitions.
 - `workflowModels` may specify a `default` selection and individual role selections for `research`, `prd`, `design`, `meeting`, `planning`, `coding`, and `validation`. Selections accept the same string or runtime-specific object shape as base role models. Runtime-specific objects must contain both `agents` and `claude` values.
@@ -119,6 +121,7 @@ The CLI shows the effective model, agent format, and config source. A runtime th
 - Unconfigured roles use `inherit`.
 - `workflows update` leaves configured values in `workspace.config.json` and reapplies them to refreshed agent files.
 - An existing config without model settings gains visible default sections after `workflows update`; partially configured model sections gain only missing defaults. Running update again does not rewrite an already complete config.
+- New workspace config includes `autoMode.enabled: false`. Legacy enabled state and timestamp survive migration; explicit config values take precedence over legacy values.
 - Invalid role keys or model values cause a clear nonzero CLI failure and no partial agent updates.
 - Malformed JSON fails before changing agent definitions. Returning a role to `inherit` restores both definitions to inherited behavior.
 - Sync reports applied values and an already-current result on a repeated run.

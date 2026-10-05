@@ -2,6 +2,10 @@
 	"projectName": "Agent Workflow Template",
 	"artifactDirectories": ["prds", "plans", "designs", "research", "docs"],
 	"projectProfile": "project/repositories.json",
+	"autoMode": {
+		"enabled": true,
+		"updatedAt": "2026-10-01T08:39:26.255Z"
+	},
 	"agentModels": {
 		"project-manager": "inherit",
 		"tech-lead": "inherit",

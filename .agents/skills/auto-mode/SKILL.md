@@ -17,16 +17,19 @@ Use `$auto-mode on`, `$auto-mode off`, `$auto-mode toggle`, or `$auto-mode statu
 `/auto-mode ...`). Run `workflows auto <action> --root <workspace-root>` from the
 workspace root. If the installed CLI is unavailable, use
 `node <package-root>/bin/workflows.js auto <action> --root <workspace-root>`.
-Report the effective state and `.agent-workflows/metadata.json` path. The CLI
-owns writes; do not manually edit the metadata file. Missing metadata means off.
+Report the effective state and `workspace.config.json` path. The CLI owns writes;
+do not manually edit the auto-mode setting through this command. Older
+`.agent-workflows/metadata.json` settings migrate automatically when a config
+or auto-mode command runs. Missing settings default off.
 
 ## Automatic Feature Workflow
 
 At the beginning of a developer-initiated feature or implementation request,
-read `.agent-workflows/metadata.json`. Apply this section only when
-`autoMode.enabled` is `true`. Treat missing or invalid metadata as off; report
-invalid metadata rather than guessing. Read the relevant stage skill at each
-step and keep its quality and artifact requirements. The active request
+read `workspace.config.json` and inspect `autoMode.enabled`. If it is absent,
+read legacy `.agent-workflows/metadata.json` until migration. Apply this section
+only when the effective `autoMode.enabled` is `true`. Treat missing settings as
+off; report malformed settings rather than guessing. Read the relevant stage
+skill at each step and keep its quality and artifact requirements. The active request
 authorizes intermediate PRD and plan approvals and stage continuation; it does
 not authorize commits, pushes, publishing, deployment, production changes, or
 work outside the requested feature.
@@ -90,7 +93,7 @@ return to manual approval and stage gates before the next stage.
 
 ## Output
 
-For a toggle, report the effective state and metadata path. For a completed
+For a toggle, report the effective state and `workspace.config.json` path. For a completed
 coding feature, follow `templates/auto-mode-completion-summary-template.md`
 and include research, PRD, design or non-applicability, meeting log, plans,
 changed repositories, validation, developer setup actions, breaking changes,

@@ -38,6 +38,7 @@ In scope:
 - Add an `agentModels` map with all five roles defaulting to `inherit`.
 - Preserve workspace config across package update, including legacy manifests.
 - Backfill missing model defaults into older workspace config files during update without overwriting configured or unrelated values.
+- Move auto mode to `workspace.config.json`, migrate legacy state, and preserve unrelated legacy metadata.
 - Add `workflows agents sync` with validation, idempotent writes, and useful output.
 - Run synchronization after init/update and document the flow.
 - Add focused CLI tests.
@@ -69,6 +70,7 @@ Out of scope:
 4. Add CLI tests, then run root validation.
 5. Resolve workflow precedence in the CLI, update role-spawning instructions, and test planning/coding divergence and fallback.
 6. Merge visible default model sections into legacy config on update; cover absent, partial, and complete config states.
+7. Store auto mode in the workspace config and migrate legacy metadata with tests for precedence and preservation.
 
 ## Validation
 
