@@ -117,6 +117,9 @@ model IDs, then run `bunx workflows agents sync`.
 The command updates both `.agents/agents/` and `.claude/agents/` definitions.
 Initialization and updates synchronize them automatically. Start a new agent
 session after reloading the runtime to use changed models.
+When an older workspace config has no model sections, `workflows update` adds
+the default `inherit` role entries and empty planning/coding sections without
+replacing existing settings.
 For a step-specific model, add `workflowModels.<step>.<role>` or
 `workflowModels.<step>.default` to the same file. The supported steps are
 `research`, `prd`, `design`, `meeting`, `planning`, `coding`, and `validation`.

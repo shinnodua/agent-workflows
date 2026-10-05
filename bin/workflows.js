@@ -106,7 +106,9 @@ try {
 function initWorkspace(root) {
 	ensureDirectory(root);
 	const scaffolded = copyPaths(root, scaffoldOnlyPaths, { overwrite: false });
-	const { models } = readModelConfiguration(root);
+	const prepared = prepareWorkspaceConfig(root);
+	const { models } = readModelConfiguration(root, prepared.config);
+	if (prepared.changed) writeWorkspaceConfig(root, prepared.config);
 	const managed = copyPaths(root, managedPaths, { overwrite: false });
 	syncAgentModels(root, models);
 	mergePackageScripts(root);
@@ -126,15 +128,20 @@ function initWorkspace(root) {
 
 function updateWorkspace(root) {
 	const manifest = loadManifest(root);
-	const { models } = readModelConfiguration(root);
+	const prepared = prepareWorkspaceConfig(root);
+	const { models } = readModelConfiguration(root, prepared.config);
 	const paths = [
 		...new Set([...(manifest?.managedPaths ?? []), ...managedPaths]),
 	].filter((relativePath) => relativePath !== "workspace.config.json");
+	if (prepared.changed) writeWorkspaceConfig(root, prepared.config);
 	const managed = copyPaths(root, paths, { overwrite: true });
 	syncAgentModels(root, models);
 	writeManifest(root);
 
 	console.log(`Updated ${managed.length} managed workflow files in ${root}`);
+	if (prepared.changed) {
+		console.log("Added missing model defaults to workspace.config.json.");
+	}
 	console.log(
 		"Project profile files and existing artifacts were left unchanged.",
 	);
@@ -143,16 +150,75 @@ function updateWorkspace(root) {
 	);
 }
 
-function readModelConfiguration(root) {
+function readWorkspaceConfig(root) {
 	const configPath = path.join(root, "workspace.config.json");
-	let config;
 	try {
-		config = readJson(configPath);
+		return readJson(configPath);
 	} catch (error) {
 		throw new Error(
 			`workspace.config.json could not be read as JSON: ${error instanceof Error ? error.message : String(error)}`,
 		);
 	}
+}
+
+function prepareWorkspaceConfig(root) {
+	const configPath = path.join(root, "workspace.config.json");
+	const defaults = readJson(path.join(packageRoot, "workspace.config.json"));
+	if (!fs.existsSync(configPath)) {
+		return { config: defaults, changed: true };
+	}
+	const config = readWorkspaceConfig(root);
+	if (!config || typeof config !== "object" || Array.isArray(config)) {
+		throw new Error("workspace.config.json must contain a JSON object.");
+	}
+	let changed = false;
+	if (!Object.hasOwn(config, "agentModels")) {
+		config.agentModels = { ...defaults.agentModels };
+		changed = true;
+	} else if (
+		config.agentModels &&
+		typeof config.agentModels === "object" &&
+		!Array.isArray(config.agentModels)
+	) {
+		for (const [role, model] of Object.entries(defaults.agentModels)) {
+			if (!Object.hasOwn(config.agentModels, role)) {
+				config.agentModels[role] = model;
+				changed = true;
+			}
+		}
+	}
+	if (!Object.hasOwn(config, "workflowModels")) {
+		config.workflowModels = structuredClone(defaults.workflowModels);
+		changed = true;
+	} else if (
+		config.workflowModels &&
+		typeof config.workflowModels === "object" &&
+		!Array.isArray(config.workflowModels)
+	) {
+		for (const [step, selections] of Object.entries(defaults.workflowModels)) {
+			if (!Object.hasOwn(config.workflowModels, step)) {
+				config.workflowModels[step] = structuredClone(selections);
+				changed = true;
+			}
+		}
+	}
+	return { config, changed };
+}
+
+function writeWorkspaceConfig(root, config) {
+	const target = path.join(root, "workspace.config.json");
+	const temporary = `${target}.${process.pid}.${Date.now()}.tmp`;
+	try {
+		fs.writeFileSync(temporary, `${JSON.stringify(config, null, "\t")}\n`, {
+			flag: "wx",
+		});
+		fs.renameSync(temporary, target);
+	} finally {
+		if (fs.existsSync(temporary)) fs.unlinkSync(temporary);
+	}
+}
+
+function readModelConfiguration(root, config = readWorkspaceConfig(root)) {
 	if (!config || typeof config !== "object" || Array.isArray(config)) {
 		throw new Error("workspace.config.json must contain a JSON object.");
 	}
@@ -804,7 +870,7 @@ Usage:
 
 Commands:
   init       Write local workflow shims into a developer project and create a manifest.
-  update     Refresh workflow-owned shims from the installed package.
+  update     Refresh workflow-owned shims and add missing model defaults to older configs.
   dashboard  Start the packaged dashboard against the developer project.
   integrity  Run the packaged workspace integrity check against the project.
   check      Run package-provided workspace checks against the project.

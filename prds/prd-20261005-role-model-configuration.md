@@ -51,6 +51,7 @@ Functional requirements:
 - A CLI command applies configured values to local Codex/Antigravity and Claude Code agent definitions.
 - Init and update apply the map automatically after validating it. Sync validates and prepares all target files before writing any agent definition.
 - Update preserves project-specific config values, including when an older manifest lists `workspace.config.json` as managed.
+- Update adds missing default `agentModels` role entries and `workflowModels` sections to an older `workspace.config.json`, using `inherit` for base roles and empty planning/coding step objects, while preserving existing values and unrelated fields.
 - A missing role value defaults to `inherit` for compatibility.
 - Invalid config fails with an actionable error naming the path and invalid key or value before changing agent definitions.
 - `workflowModels` may specify a `default` selection and individual role selections for `research`, `prd`, `design`, `meeting`, `planning`, `coding`, and `validation`. Selections accept the same string or runtime-specific object shape as base role models. Runtime-specific objects must contain both `agents` and `claude` values.
@@ -117,6 +118,7 @@ The CLI shows the effective model, agent format, and config source. A runtime th
 - Runtime-specific role values can differ between the two formats.
 - Unconfigured roles use `inherit`.
 - `workflows update` leaves configured values in `workspace.config.json` and reapplies them to refreshed agent files.
+- An existing config without model settings gains visible default sections after `workflows update`; partially configured model sections gain only missing defaults. Running update again does not rewrite an already complete config.
 - Invalid role keys or model values cause a clear nonzero CLI failure and no partial agent updates.
 - Malformed JSON fails before changing agent definitions. Returning a role to `inherit` restores both definitions to inherited behavior.
 - Sync reports applied values and an already-current result on a repeated run.

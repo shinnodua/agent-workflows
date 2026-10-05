@@ -299,6 +299,8 @@ Developers configure per-role models in `workspace.config.json` under
 `workflows update` apply the values automatically to `.agents/agents/` and
 `.claude/agents/`. A role may use a string for both formats or an object with
 separate `agents` and `claude` model IDs. An omitted role uses `inherit`.
+Updates add missing default model entries to older workspace config files and
+preserve configured values.
 `workflowModels` can override a role for `research`, `prd`, `design`, `meeting`,
 `planning`, `coding`, or `validation`. Each step may set `default` for all roles
 and then role-specific values. Resolution is step role, step default, base role,

@@ -283,3 +283,55 @@ test("invalid workflow override fails before agent files change", (context) => {
 	assert.match(run(root, "agents", "sync").stderr, /unknown step/);
 	assert.equal(fs.readFileSync(agentPath, "utf8"), before);
 });
+
+test("update backfills visible model defaults in legacy configs without replacing choices", (context) => {
+	const root = fs.mkdtempSync(
+		path.join(os.tmpdir(), "agent-workflows-upgrade-"),
+	);
+	context.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	assert.equal(run(root, "init").status, 0);
+	const configPath = path.join(root, "workspace.config.json");
+	fs.writeFileSync(
+		configPath,
+		JSON.stringify({
+			projectName: "Legacy project",
+			customSetting: { keep: true },
+		}),
+	);
+	const first = run(root, "update");
+	assert.equal(first.status, 0, first.stderr);
+	assert.match(first.stdout, /Added missing model defaults/);
+	const migrated = JSON.parse(fs.readFileSync(configPath, "utf8"));
+	assert.equal(migrated.projectName, "Legacy project");
+	assert.deepEqual(migrated.customSetting, { keep: true });
+	assert.deepEqual(migrated.agentModels, {
+		"project-manager": "inherit",
+		"tech-lead": "inherit",
+		"ui-ux-designer": "inherit",
+		"backend-developer": "inherit",
+		"frontend-developer": "inherit",
+	});
+	assert.deepEqual(migrated.workflowModels, { planning: {}, coding: {} });
+
+	fs.writeFileSync(
+		configPath,
+		JSON.stringify({
+			projectName: "Legacy project",
+			customSetting: { keep: true },
+			agentModels: { "tech-lead": "chosen-model" },
+			workflowModels: { planning: { "tech-lead": "planning-model" } },
+		}),
+	);
+	const second = run(root, "update");
+	assert.equal(second.status, 0, second.stderr);
+	const partial = JSON.parse(fs.readFileSync(configPath, "utf8"));
+	assert.equal(partial.agentModels["tech-lead"], "chosen-model");
+	assert.equal(partial.agentModels["backend-developer"], "inherit");
+	assert.equal(partial.workflowModels.planning["tech-lead"], "planning-model");
+	assert.deepEqual(partial.workflowModels.coding, {});
+	const textAfterMigration = fs.readFileSync(configPath, "utf8");
+	const third = run(root, "update");
+	assert.equal(third.status, 0, third.stderr);
+	assert.doesNotMatch(third.stdout, /Added missing model defaults/);
+	assert.equal(fs.readFileSync(configPath, "utf8"), textAfterMigration);
+});

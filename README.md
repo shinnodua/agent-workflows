@@ -69,7 +69,8 @@ values when the runtimes need different IDs. For example:
 After editing, run `bunx workflows agents sync` and start a new agent session.
 The command updates local `.agents/agents/` and `.claude/agents/` definitions;
 `workflows init` and `workflows update` run it automatically. Updates preserve
-your workspace config. Each agent runtime checks whether its configured model
+your workspace config and add missing model defaults to configs created by older
+package versions. Each agent runtime checks whether its configured model
 is available when the agent starts.
 
 You can override a role's base model for a workflow step. Add `workflowModels`
@@ -148,7 +149,7 @@ bunx workflows agents resolve planning tech-lead --format agents --json
   record under `meeting-logs/`.
 - `workflows dashboard` starts the packaged dashboard and reads artifact data
   from the developer project root.
-- `workflows update` refreshes workflow-owned shims after upgrading this package.
+- `workflows update` refreshes workflow-owned shims and adds missing model defaults to older workspace configs.
 - `workflows integrity` validates workspace artifact metadata.
 - `workflows check` runs package-provided workspace checks.
 - `workflows agents sync` applies per-role models from `workspace.config.json`.

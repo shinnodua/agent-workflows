@@ -110,3 +110,7 @@ Use `workspace.config.json` as the source of truth. Add a `workflows agents sync
 ## Follow-Up: Workflow Step Overrides
 
 The developer clarified that one role may need model A while joining planning and model B while coding. Static agent frontmatter can only express the base role model. A workflow coordinator therefore needs to resolve a model at the moment it spawns a role agent for a step. Add a `workflowModels` map in the same config file, with step names `research`, `prd`, `design`, `meeting`, `planning`, `coding`, and `validation`. Within a step, a `default` selection applies to all roles and a role selection overrides it. Resolution order is step role, step default, base role, then `inherit`. A CLI query makes the result inspectable and usable by coordinators; the existing sync continues to write only base role values to static agent definitions. This affects no product submodule or visual surface.
+
+## Follow-Up: Updating Older Workspace Configs
+
+An initialized workspace may already have `workspace.config.json` from a package version before model settings existed. The update command correctly preserves the file, but therefore leaves its new model sections absent. During update, merge the package's default `agentModels` role entries and `workflowModels` step skeleton into the existing JSON, preserving configured values and unrelated fields. Validate before writing and leave invalid JSON untouched.
