@@ -1,6 +1,6 @@
 {
 	"name": "@shinnodua/agent-workflows",
-	"version": "0.2.4",
+	"version": "0.2.5",
 	"description": "Installable multi-repository agent workflow template with local dashboard tooling.",
 	"license": "MIT",
 	"type": "module",
