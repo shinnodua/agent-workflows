@@ -19,6 +19,12 @@
 		"indentStyle": "tab",
 		"lineEnding": "lf"
 	},
+	"overrides": [
+		{
+			"includes": ["workspace.config.json"],
+			"formatter": { "enabled": false }
+		}
+	],
 	"linter": {
 		"enabled": true,
 		"rules": {

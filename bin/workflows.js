@@ -751,6 +751,17 @@ function startDashboard(root, args) {
 }
 
 function runCheck(root) {
+	const configPath = path.join(root, "workspace.config.json");
+	if (fs.existsSync(configPath)) {
+		const config = readWorkspaceConfig(root);
+		if (!config || typeof config !== "object" || Array.isArray(config)) {
+			throw new Error("workspace.config.json must contain a JSON object.");
+		}
+		readModelConfiguration(root, config);
+		if (Object.hasOwn(config, "autoMode")) {
+			validateAutoModeConfig(config.autoMode);
+		}
+	}
 	const commands = [
 		[resolvePackageBin("@biomejs/biome"), ["check", root]],
 		["bun", [path.join(packageRoot, "scripts/workspace-integrity.ts")]],

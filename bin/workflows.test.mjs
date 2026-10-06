@@ -14,6 +14,28 @@ function run(root, ...args) {
 	});
 }
 
+test("workspace check validates model config keys and values", (context) => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-workflows-check-"));
+	context.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const configPath = path.join(root, "workspace.config.json");
+
+	fs.writeFileSync(
+		configPath,
+		JSON.stringify({ agentModels: { "unknown-role": "inherit" } }, null, 2),
+	);
+	const invalidRole = run(root, "check");
+	assert.equal(invalidRole.status, 1);
+	assert.match(invalidRole.stderr, /unknown role "unknown-role"/);
+
+	fs.writeFileSync(
+		configPath,
+		JSON.stringify({ agentModels: { "tech-lead": "" } }, null, 2),
+	);
+	const invalidModel = run(root, "check");
+	assert.equal(invalidModel.status, 1);
+	assert.match(invalidModel.stderr, /invalid model/);
+});
+
 test("auto mode persists in workspace config and survives workflow updates", (context) => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-workflows-auto-"));
 	context.after(() => fs.rmSync(root, { recursive: true, force: true }));
@@ -210,6 +232,55 @@ test("runtime-specific role models sync and survive legacy updates", (context) =
 		),
 		/^model: inherit$/m,
 	);
+});
+
+test("legacy agents and claude model objects remain readable during update", (context) => {
+	const root = fs.mkdtempSync(
+		path.join(os.tmpdir(), "agent-workflows-legacy-models-"),
+	);
+	context.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	assert.equal(run(root, "init").status, 0);
+	const configPath = path.join(root, "workspace.config.json");
+	const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+	config.agentModels["tech-lead"] = {
+		agents: "inherit",
+		claude: "sonnet",
+	};
+	config.workflowModels = {
+		planning: {
+			"tech-lead": { agents: "inherit", claude: "opus" },
+		},
+	};
+	fs.writeFileSync(configPath, JSON.stringify(config));
+	const update = run(root, "update");
+	assert.equal(update.status, 0, update.stderr);
+	assert.match(
+		fs.readFileSync(
+			path.join(root, ".agents/agents/tech-lead/agent.md"),
+			"utf8",
+		),
+		/^model: inherit$/m,
+	);
+	assert.match(
+		fs.readFileSync(path.join(root, ".claude/agents/tech-lead.md"), "utf8"),
+		/^model: sonnet$/m,
+	);
+	const resolve = (format) => {
+		const result = run(
+			root,
+			"agents",
+			"resolve",
+			"planning",
+			"tech-lead",
+			"--format",
+			format,
+			"--json",
+		);
+		assert.equal(result.status, 0, result.stderr);
+		return JSON.parse(result.stdout).model;
+	};
+	assert.equal(resolve("agents"), "inherit");
+	assert.equal(resolve("claude"), "opus");
 });
 
 test("invalid role model configuration leaves agent definitions unchanged", (context) => {
