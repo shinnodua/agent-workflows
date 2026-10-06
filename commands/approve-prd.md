@@ -17,9 +17,8 @@ If the PRD contains open questions, `approve-prd` automatically invokes the
 `griling-prd` skill (`.agents/skills/griling-prd/SKILL.md`), requiring the
 developer to answer all open questions before proceeding.
 
-If the PRD is in `draft` status, `approve-prd` asks the developer whether to
-move to UI/UX design (`need-design`) or proceed directly to create plans
-(`approved`). When design is complete (`design-done`), running `approve-prd`
-approves the PRD and generates root and submodule plans.
+After review, `approve-prd` approves a `draft` or `design-done` PRD and invokes
+`create-plan` for root and affected submodule plans. A PRD in `need-design`
+must finish or explicitly skip the selected design first.
 
 Codex slash command shim: `.codex/prompts/approve-prd.md`.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Plan"
+  short_description: "Plan from a PRD or feature description"
+  default_prompt: "Use $create-plan to create implementation plans from this PRD or feature description."

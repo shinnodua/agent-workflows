@@ -152,7 +152,7 @@ setting at the start of each developer-initiated feature or implementation
 request and follows `.agents/skills/auto-mode/SKILL.md` when enabled.
 
 With auto mode on, the agent advances through research → PRD → design → sprint
-meeting → PRD approval → root and affected submodule plans → plan approval →
+meeting → PRD approval → `create-plan` (root and affected submodule plans) → plan approval →
 implementation and validation. Design is recorded as not applicable when there
 is no user-facing surface. The agent resolves questions it can answer and asks
 the developer only for decisions that require developer intent or information.
@@ -396,13 +396,16 @@ catalog. The legacy format name `agents` remains an alias for `codex`.
   - Command spec: `commands/approve-prd.md`.
   - If the PRD contains open questions, automatically invoke the `griling-prd` skill to require the developer to answer all open questions before proceeding.
   - Optional UI/UX design begins from the draft PRD, before the PRD review phase.
-  - After review, approve a PRD in `draft` or `design-done` status and create plans. If its status is `need-design`, finish or explicitly skip the selected design before approval.
-  - After approval, automatically create the root overview plan and any required submodule plans using `templates/plan-template.md`.
-  - Plans created from an approved PRD must link back to that PRD.
-  - Plans must carry forward relevant PRD research sources and summarize the
-    planning implications for the root plan and each affected submodule plan.
-  - In auto mode, resolve agent-answerable questions and proceed to plan
-    approval without routine developer approval prompts.
+  - After review, approve a PRD in `draft` or `design-done` status. If its status is `need-design`, finish or explicitly skip the selected design before approval.
+  - After saving approval metadata, invoke `create-plan` for the approved PRD and complete its planning work in the same request.
+- `$create-plan <prd-id-or-path-or-description>`, `create-plan <prd-id-or-path-or-description>`, or `/create-plan <prd-id-or-path-or-description>`
+  - Skill: `.agents/skills/create-plan/SKILL.md`.
+  - Codex slash prompt: `.codex/prompts/create-plan.md`.
+  - Command spec: `commands/create-plan.md`.
+  - An ID or path selects a PRD. A feature description finds an unambiguous matching PRD or starts the PRD workflow. Planning starts only after PRD approval; manual mode waits for developer approval, while auto mode completes its required stages.
+  - Create or resume a root overview plan and any affected submodule plans using `templates/plan-template.md`. Link plans to the PRD and carry forward relevant research and planning implications.
+  - Reuse matching plans on reruns, preserve progressed plan statuses, and avoid duplicate plan IDs.
+  - In auto mode, review completeness and proceed to plan approval without a routine developer prompt.
 - `$approve-plan <plan-id>`, `approve-plan <plan-id>`, or `/approve-plan <plan-id>`
   - Skill: `.agents/skills/approve-plan/SKILL.md`.
   - Codex slash prompt: `.codex/prompts/approve-plan.md`.

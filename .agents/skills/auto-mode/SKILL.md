@@ -50,11 +50,12 @@ Advance through these stages in order, reusing verified artifacts if resuming:
 5. **Approve PRD:** Follow `approve-prd/SKILL.md`. Check that requirements and
    human-only decisions are resolved, mark the PRD `approved`, and record
    `Approved by: auto-mode (developer-enabled)` and
-   `Approval command: $auto-mode on`. Create the root and affected submodule
-   plans as the skill requires.
-6. **Create plan:** Confirm the root plan and all required submodule plans are
-   complete, linked, and consistent. This is the planning output of the prior
-   approval skill; do not create duplicates.
+   `Approval command: $auto-mode on`. The approval skill then hands off to
+   `create-plan`.
+6. **Create plan:** Follow `create-plan/SKILL.md` for the approved PRD. Confirm
+   the root plan and all required submodule plans are complete, linked, and
+   consistent. Reuse plans already produced by the approval handoff; do not
+   create duplicates.
 7. **Approve plan:** Follow `approve-plan/SKILL.md`. Resolve agent-answerable
    planning issues, mark the root plan `approved`, and record the same auto-mode
    approval authority.
