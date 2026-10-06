@@ -1,5 +1,12 @@
 # agent-workflows
 
+## 0.2.5
+
+### Patch Changes
+
+- e0cfd07: workspace validate
+- e0cfd07: create plan command
+
 ## 0.2.4
 
 ### Patch Changes
