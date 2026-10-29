@@ -2,6 +2,9 @@
 
 Use this guide when applying Agent Workflows to a new multi-repository project.
 
+For an ordered agent walkthrough from package installation through verified
+project setup, start with [INSTALL.md](../INSTALL.md).
+
 ## Template Model
 
 The workspace is split into two layers:
@@ -80,6 +83,23 @@ Then run the guided setup command to fill the project profile files:
 ```sh
 /project-setup
 ```
+
+To add repositories directly, use the same URL-first flow as project setup:
+
+```txt
+$add-project [repository-url]
+```
+
+The agent fetches accessible repository facts, suggests the profile values, asks
+for missing facts, and presents a complete entry for review. After each entry,
+choose Add another repository or Save repositories. You can edit or remove pending
+entries. Save previews destinations, changed files, example cleanup, and Git index
+effects before cloning and registering the selected repositories as submodules.
+Existing real entries are retained; unchanged shipped examples and their template
+workflow references are removed only after successful additions. No commits are
+created. A failed batch reports completed and pending registrations for safe retry.
+Repository additions remain pending until Save even when invoked in project setup;
+other setup answers retain their existing incremental save behavior.
 
 After a PRD exists, run a role-agent review meeting from the active agent chat:
 

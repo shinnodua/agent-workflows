@@ -29,6 +29,9 @@ Use it to plan cross-repository work, split implementation into focused tasks, w
 
 ## Project Profile
 
+For first-time installation, incomplete initialization, or workspace setup,
+read [INSTALL.md](INSTALL.md) before changing configuration.
+
 Read these files before planning or editing project code:
 
 - `project/PROJECT.md` - project purpose and ownership boundaries.

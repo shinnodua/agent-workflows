@@ -16,6 +16,9 @@ Explore the [interactive workspace delivery workflow](.archify/workflow-workspac
 
 ## Install
 
+To have an agent initialize and configure a complete consuming workspace, give it
+the [INSTALL.md bootstrap guide](INSTALL.md).
+
 Install the package globally when you want the `workflows` command available in
 your shell:
 
@@ -151,6 +154,7 @@ only the developer can answer.
 bunx workflows init
 auto-mode on|off|toggle|status
 project-setup
+add-project [repository-url]
 sprint-meeting
 bunx workflows dashboard
 bunx workflows update
@@ -165,6 +169,11 @@ bunx workflows agents resolve planning tech-lead --format codex --json
 - `auto-mode` and `workflows auto` control workspace-local automatic progression.
 - `project-setup` guides the developer through completing the `project/` profile
   files step by step.
+- `add-project` starts with a repository URL, infers profile values, and reviews
+  entries one at a time. Choose Add another repository or Save repositories. Save
+  clones and registers the selected submodules, updates related configuration,
+  and removes recognized example entries after successful additions; it creates
+  no commits. Project setup reuses this flow.
 - `sprint-meeting` runs a time-boxed role-agent PRD review meeting and saves the
   record under `meeting-logs/`.
 - `workflows dashboard` starts the packaged dashboard and reads artifact data

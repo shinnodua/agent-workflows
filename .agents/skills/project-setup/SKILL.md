@@ -52,25 +52,29 @@ It may create missing artifact directories such as `prds/`, `plans/`,
 6. Prefer the next question that unlocks the most file updates. A practical
    order is:
    - Project name, purpose, and ownership boundaries for `project/PROJECT.md`.
-   - Repository list with stable IDs, local paths, and remote URLs for
-     `project/repositories.json` and `.gitmodules`.
-   - Repository purposes, scopes, platform tags, and agent guide paths.
-   - Artifact directories and code scan directories per repository.
-   - Validation commands per repository and root/dashboard validation commands.
+   - Repository additions: read and follow `../add-project/SKILL.md`. Start with
+     a URL, infer and review values, collect entries, and explicitly Save using
+     that flow. Reuse its review and mutation helper rather than duplicating them.
+   - Root/dashboard validation commands and remaining repository follow-ups.
    - Project-specific implementation stages for `project/workflows.json`.
 7. Include a recommended answer when a reasonable default exists, but make it
    clear that the developer can correct it.
-8. After each answer, update all files that can now be updated coherently. Use
-   structured JSON parsing and serialization for JSON files.
+8. Outside repository addition, update all files that can now be updated coherently
+   after each answer. The add-project subflow keeps repository entries and cleanup
+   pending until Save. Cancelling it preserves unrelated setup answers already
+   saved. Use structured JSON parsing and serialization for JSON files.
 9. Keep JSON formatted with tabs to match the existing workspace files.
-10. Generate `.gitmodules` entries from repositories that have both `path` and
-    `url`. Do not invent repository URLs.
+10. For new repository additions, let add-project handle `.gitmodules` and Git
+    registration on Save. Keep existing configuration aligned without claiming
+    that a `.gitmodules` entry alone registers a submodule. Never invent URLs.
 11. If a repository has no known validation command, use an empty validation
     array or leave an explicit open question in the final report; do not invent
     commands.
-12. Do not clone repositories, initialize submodules, install packages, push,
-    publish, deploy, or edit product code unless the developer explicitly asks
-    for that as a separate action.
+12. Saving reviewed entries in the add-project subflow authorizes their clones
+    and Git submodule registrations. Perform those operations only through that
+    subflow after its Save preview. Outside it, cloning/initialization still needs
+    a separate request. Do not install packages, commit, push, publish, deploy,
+    or edit product code during setup.
 13. When setup is complete enough for agents to operate, run or suggest
     `workflows integrity` or `bun run workspace:integrity` depending on what is
     available locally.

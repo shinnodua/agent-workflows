@@ -528,3 +528,71 @@ test("update backfills visible model defaults in legacy configs without replacin
 	assert.doesNotMatch(third.stdout, /Added missing model defaults/);
 	assert.equal(fs.readFileSync(configPath, "utf8"), textAfterMigration);
 });
+
+test("add-project discovery installs and updates without replacing project data", (context) => {
+	const root = fs.mkdtempSync(
+		path.join(os.tmpdir(), "agent-workflows-add-project-"),
+	);
+	context.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const initialized = run(root, "init");
+	assert.equal(initialized.status, 0, initialized.stderr);
+	for (const relative of [
+		".agents/skills/add-project/SKILL.md",
+		".agents/skills/add-project/references/save-protocol.md",
+		".codex/prompts/add-project.md",
+		".claude/skills/add-project/SKILL.md",
+		"commands/add-project.md",
+	]) {
+		assert.equal(fs.existsSync(path.join(root, relative)), true, relative);
+	}
+	const profilePath = path.join(root, "project/repositories.json");
+	const profile = { repositories: [], custom: "keep developer configuration" };
+	fs.writeFileSync(profilePath, JSON.stringify(profile));
+	const refreshed = run(root, "update");
+	assert.equal(refreshed.status, 0, refreshed.stderr);
+	assert.deepEqual(JSON.parse(fs.readFileSync(profilePath, "utf8")), profile);
+	const skillShim = fs.readFileSync(
+		path.join(root, ".agents/skills/add-project/SKILL.md"),
+		"utf8",
+	);
+	assert.match(skillShim, /packaged/i);
+	assert.match(skillShim, /add-project/);
+	assert.equal(
+		fs.existsSync(path.join(root, "scripts/add-project.mjs")),
+		false,
+	);
+});
+
+test("packaged add-project helper targets a consumer rather than the source template", (context) => {
+	const root = fs.mkdtempSync(
+		path.join(os.tmpdir(), "agent-workflows-add-consumer-"),
+	);
+	context.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const sourceProfile = fileURLToPath(
+		new URL("../project/repositories.json", import.meta.url),
+	);
+	const sourceBefore = fs.readFileSync(sourceProfile, "utf8");
+	assert.equal(run(root, "init").status, 0);
+	const initializedGit = spawnSync("git", ["init", root], { encoding: "utf8" });
+	assert.equal(initializedGit.status, 0, initializedGit.stderr);
+	const profilePath = path.join(root, "project/repositories.json");
+	const profileBefore = fs.readFileSync(profilePath, "utf8");
+	const request = path.join(root, "empty-request.json");
+	fs.writeFileSync(request, JSON.stringify({ entries: [] }));
+	const helper = fileURLToPath(
+		new URL("../scripts/add-project.mjs", import.meta.url),
+	);
+	const result = spawnSync(
+		process.execPath,
+		[helper, "save", "--root", root, "--request", request],
+		{
+			cwd: root,
+			encoding: "utf8",
+		},
+	);
+	assert.equal(result.status, 0, result.stdout + result.stderr);
+	assert.equal(JSON.parse(result.stdout).status, "empty");
+	assert.equal(fs.readFileSync(profilePath, "utf8"), profileBefore);
+	assert.equal(fs.readFileSync(sourceProfile, "utf8"), sourceBefore);
+	assert.equal(fs.existsSync(path.join(root, ".gitmodules")), false);
+});

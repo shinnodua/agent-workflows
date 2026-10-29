@@ -334,8 +334,19 @@ catalog. The legacy format name `agents` remains an alias for `codex`.
     `project/workflows.json`, and `.gitmodules`.
   - Read existing project setup files first, preserve developer-provided values,
     ask one setup question at a time, and update files incrementally.
-  - Do not clone repositories, initialize submodules, install packages, push, or
-    edit product code unless the developer explicitly asks for that separately.
+  - Repository additions delegate to `$add-project`: review entries first and
+    explicitly Save to clone/register them. Other setup steps remain incremental.
+  - Do not install packages, commit, push, or edit product code during setup.
+- `$add-project [repository-url]`, `add-project`, or `/add-project`
+  - Skill: `.agents/skills/add-project/SKILL.md`.
+  - Codex slash prompt: `.codex/prompts/add-project.md`.
+  - Command spec: `commands/add-project.md`.
+  - Infer repository fields from accessible metadata; ask focused questions and
+    review one entry at a time. Accepted entries remain pending until Save.
+  - Save clones/registers reviewed submodules, aligns related configuration, and
+    removes unchanged shipped examples after all additions succeed. Preserve
+    existing user data and report partial failures/recovery without committing.
+  - Cancel, skip, empty Save, and entry acceptance perform no Git operations.
 - `$create-prd <description>`, `create-prd <description>`, or `/create-prd <description>`
   - Skill: `.agents/skills/create-prd/SKILL.md`.
   - Codex slash prompt: `.codex/prompts/create-prd.md`.

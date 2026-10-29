@@ -25,6 +25,7 @@
 		".claude",
 		"AGENTS.md",
 		"CLAUDE.md",
+		"INSTALL.md",
 		"bin",
 		"commands",
 		"dashboard/.agents",
@@ -62,7 +63,7 @@
 		"workflow:cli:test": "node --test bin/workflows.test.mjs",
 		"security:staged": "node scripts/check-staged-security.mjs",
 		"security:test": "node --test scripts/check-staged-security.test.mjs",
-		"workspace:check": "bun run workspace:integrity && bun run workflow:cli:test && bun run security:test && bun run lint && bun run dashboard:test && bun run dashboard:typecheck && bun run dashboard:build",
+		"workspace:check": "bun run workspace:integrity && bun run workflow:cli:test && bun run project:add:test && bun run security:test && bun run lint && bun run dashboard:test && bun run dashboard:typecheck && bun run dashboard:build",
 		"changeset": "changeset",
 		"version": "changeset version",
 		"release": "changeset publish",
@@ -75,7 +76,8 @@
 		"lint": "biome check .",
 		"lint:fix": "biome check --write .",
 		"postinstall": "node ./bin/postinstall.js",
-		"hooks:install": "lefthook install"
+		"hooks:install": "lefthook install",
+		"project:add:test": "node --test scripts/add-project.test.mjs"
 	},
 	"dependencies": {
 		"@biomejs/biome": "2.5.5",
