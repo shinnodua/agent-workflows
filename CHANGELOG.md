@@ -1,5 +1,13 @@
 # agent-workflows
 
+## 0.2.6
+
+### Patch Changes
+
+- 040b35f: Add an agent-readable INSTALL.md covering package installation, workspace
+  initialization, project setup, validation, and recovery. Include the guide in the
+  package and link it from the README, agent instructions, and setup reference.
+
 ## 0.2.5
 
 ### Patch Changes
