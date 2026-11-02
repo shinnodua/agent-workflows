@@ -182,7 +182,8 @@ bunx workflows agents resolve planning tech-lead --format codex --json
 - `workflows integrity` validates workspace artifact metadata.
 - `workflows check` validates syntax, lint rules, configuration, and workspace
   artifacts without enforcing formatting or rewriting files. Use your project's
-  dedicated lint/format command to enforce formatting.
+  dedicated Biome `check`/format command to enforce formatting and assist actions
+  such as import sorting.
 - `workflows agents sync` applies per-role models from `workspace.config.json`.
 - `workflows agents resolve` reports the effective model and config source for a workflow step.
 

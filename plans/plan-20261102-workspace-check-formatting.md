@@ -30,12 +30,12 @@ Root CLI only; no submodule plans needed.
 
 ## Cross-Repo Design
 
-None. Consumer check invokes packaged Biome with explicit formatter disabling, then existing integrity. Consumer lint rules and assist remain intact; no config writes.
+None. Consumer check invokes packaged Biome lint, then existing integrity. Consumer lint rules and syntax validation remain intact; no config writes. Formatting and assist enforcement stay in dedicated Biome check commands.
 
 ## Sequence
 
 1. Add real CLI fixtures for compact/multiline config, consumer formatting overrides, source formatting, no writes, malformed settings, lint, and artifact failures; observe red.
-2. Explicitly disable Biome formatter in runCheck. Preserve command ordering and other options.
+2. Use Biome lint in runCheck so consumer overrides cannot re-enable formatting. Preserve validation ordering.
 3. Document dedicated lint/format boundary and correct bootstrap advice.
 4. Run focused tests then full root workspace:check. Record results.
 
@@ -76,7 +76,7 @@ None.
 
 ### Implementation summary
 
-Root bin/workflows.js explicitly disables Biome formatting in packaged check, preserving consumer lint configuration, parser/assist behavior, config validation, and integrity ordering. Two integration tests cover formatting and retained failures. README.md and INSTALL.md explain the dedicated lint boundary. Root biome.json and workspace.config.json were not changed.
+Root bin/workflows.js uses Biome lint in packaged check, preserving consumer lint configuration, parser behavior, config validation, and integrity ordering. Dedicated Biome check commands own formatting and assist actions. Two integration tests cover formatting and retained failures. README.md and INSTALL.md explain the dedicated lint boundary. Root biome.json and workspace.config.json were not changed.
 
 ### Breaking changes and compatibility
 
@@ -99,3 +99,7 @@ None: checked CLI command options, package scripts, and root configuration. No e
 ### Human-only questions
 
 None.
+
+## CI Follow-Up Validation
+
+The earlier passing local report was insufficient: temporary-directory aliases masked consumer config lookup on macOS. With fs.realpathSync, the existing regression reproduced CI's formatter error before the correction and passed after switching to Biome lint. The test also verifies source parser errors, and its config now uses rules.preset. The original full validation result above records the prior implementation; full `bun run workspace:check` for the corrected implementation passed: 15 CLI tests, 26 repository-add tests, 5 security tests, lint, 34 dashboard tests, typecheck, and production build. The known artifact-reference and bundle-size warnings remain. Linux CI itself was not rerun from this local session.

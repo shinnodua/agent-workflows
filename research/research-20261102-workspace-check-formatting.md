@@ -47,7 +47,7 @@ Workspace validation should report invalid content without prescribing JSON line
 
 ## Technical Implications
 
-Disable the formatter for packaged check invocation; preserve linter and parser diagnostics and do not rewrite consumer configuration.
+Use the lint-only Biome command for packaged checks; preserve linter and parser diagnostics and do not rewrite consumer configuration. Formatting and assist enforcement belong to dedicated Biome check commands.
 
 ## Options
 
@@ -77,3 +77,9 @@ None.
 ## Follow-Up Inputs For PRD Or Plan
 
 Root-only CLI correction and regression coverage; no dependencies, migrations, or deployment.
+
+## CI Follow-Up
+
+The first implementation used `biome check --formatter-enabled=false`. CI proved a consumer per-file override can re-enable formatting. Resolving the temporary fixture with fs.realpathSync reproduces the same failure on macOS; the unresolved /var alias previously masked consumer configuration discovery. Both global and language-specific formatter flags still failed the canonical-path probe. `biome lint` passed without formatting, while preserving code lint and syntax errors. Tests now canonicalize the formatting fixture and use rules.preset instead of deprecated rules.recommended.
+
+Official command semantics: [Biome CLI](https://biomejs.dev/reference/cli/#biome-lint) distinguishes lint-only validation from check's formatting, lint, and assist actions.

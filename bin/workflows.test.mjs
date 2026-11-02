@@ -15,7 +15,10 @@ function run(root, ...args) {
 }
 
 test("workspace check accepts formatting differences without changing files", (context) => {
-	const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-workflows-check-"));
+	// Resolve macOS temp aliases so Biome loads the fixture's actual config.
+	const root = fs.realpathSync(
+		fs.mkdtempSync(path.join(os.tmpdir(), "agent-workflows-check-")),
+	);
 	context.after(() => fs.rmSync(root, { recursive: true, force: true }));
 	const configPath = path.join(root, "workspace.config.json");
 	const config = {
@@ -37,7 +40,7 @@ test("workspace check accepts formatting differences without changing files", (c
 			{ includes: ["workspace.config.json"], formatter: { enabled: true } },
 		],
 		linter: {
-			rules: { recommended: true, suspicious: { noDebugger: "error" } },
+			rules: { preset: "recommended", suspicious: { noDebugger: "error" } },
 		},
 	});
 	fs.writeFileSync(path.join(root, "biome.json"), biomeConfig);
@@ -58,6 +61,12 @@ test("workspace check accepts formatting differences without changing files", (c
 	assert.equal(invalidSource.status, 1);
 	assert.match(invalidSource.stdout + invalidSource.stderr, /noDebugger/);
 	assert.equal(fs.readFileSync(sourcePath, "utf8"), "debugger;\n");
+
+	fs.writeFileSync(sourcePath, "export const value = ;\n");
+	const invalidSyntax = run(root, "check");
+	assert.equal(invalidSyntax.status, 1);
+	assert.match(invalidSyntax.stdout + invalidSyntax.stderr, /parse/);
+	assert.equal(fs.readFileSync(sourcePath, "utf8"), "export const value = ;\n");
 });
 
 test("workspace check preserves syntax, settings, and integrity failures", (context) => {

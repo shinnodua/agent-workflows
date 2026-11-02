@@ -763,10 +763,8 @@ function runCheck(root) {
 		}
 	}
 	const commands = [
-		[
-			resolvePackageBin("@biomejs/biome"),
-			["check", "--formatter-enabled=false", root],
-		],
+		// `check --formatter-enabled=false` can be overridden by consumer config.
+		[resolvePackageBin("@biomejs/biome"), ["lint", root]],
 		["bun", [path.join(packageRoot, "scripts/workspace-integrity.ts")]],
 	];
 

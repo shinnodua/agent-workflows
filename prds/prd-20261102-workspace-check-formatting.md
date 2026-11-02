@@ -76,7 +76,7 @@ Not applicable: CLI validation correction without a visual interface; UX covered
 ## Review Clarifications
 
 - Formatter disabling covers all scanned files in packaged check, including source files.
-- Preserve consumer linter rules, parser and assist behavior, validation order, and integrity failures.
+- Preserve consumer linter rules, parser behavior, validation order, and integrity failures. Formatting and assist actions such as import sorting are enforced by dedicated Biome check commands.
 - Test global and per-file consumer formatter settings and unchanged bytes on success and failure.
 - Root workspace:check retains its dedicated lint command and formatting policy.
 
@@ -85,3 +85,10 @@ Not applicable: CLI validation correction without a visual interface; UX covered
 - Approved by: auto-mode (developer-enabled)
 - Approved on: `2026-11-02`
 - Approval command: `$auto-mode on`
+
+## CI Follow-Up Acceptance
+
+- The formatter-override regression uses a canonical temporary root so consumer configuration is actually discovered on macOS and Linux.
+- Use lint-only validation; explicit consumer formatter overrides must never schedule formatting.
+- Malformed source code must still fail with parser diagnostics and unchanged bytes.
+- Fixture configuration uses the supported preset field without deprecation diagnostics.
