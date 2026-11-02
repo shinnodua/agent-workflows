@@ -1,5 +1,11 @@
 # agent-workflows
 
+## 0.2.7
+
+### Patch Changes
+
+- 04f8bd0: workspace check
+
 ## 0.2.6
 
 ### Patch Changes
