@@ -763,7 +763,10 @@ function runCheck(root) {
 		}
 	}
 	const commands = [
-		[resolvePackageBin("@biomejs/biome"), ["check", root]],
+		[
+			resolvePackageBin("@biomejs/biome"),
+			["check", "--formatter-enabled=false", root],
+		],
 		["bun", [path.join(packageRoot, "scripts/workspace-integrity.ts")]],
 	];
 

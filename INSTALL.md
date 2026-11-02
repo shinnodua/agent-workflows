@@ -207,12 +207,13 @@ git status --short
 git submodule status
 ```
 
-`integrity` checks workspace artifacts; `check` also runs packaged formatting
-checks. Run the applicable commands in `project/validation.json` and repository
-checks from `project/repositories.json` in their owning directories. Review failures
-before changing files; formatting failures do not authorize discarding user work.
-Generated JSON can require formatting before `check` passes. Use the workspace's
-formatter on the reported files, inspect the diff, and rerun the failed check.
+`integrity` checks workspace artifacts; `check` also validates configuration,
+syntax, and lint rules without enforcing formatting or rewriting files. Valid
+multiline JSON arrays in `workspace.config.json` are accepted. Use the project's
+dedicated lint/format command for formatting policy. Run the applicable commands
+in `project/validation.json` and repository checks from
+`project/repositories.json` in their owning directories. Review failures before
+changing files and preserve user work.
 Passing structural checks alone does not prove the project facts are complete.
 
 Return a readiness report covering every item:

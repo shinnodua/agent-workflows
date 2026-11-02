@@ -180,7 +180,9 @@ bunx workflows agents resolve planning tech-lead --format codex --json
   from the developer project root.
 - `workflows update` refreshes workflow-owned shims and adds missing model defaults to older workspace configs.
 - `workflows integrity` validates workspace artifact metadata.
-- `workflows check` runs package-provided workspace checks.
+- `workflows check` validates syntax, lint rules, configuration, and workspace
+  artifacts without enforcing formatting or rewriting files. Use your project's
+  dedicated lint/format command to enforce formatting.
 - `workflows agents sync` applies per-role models from `workspace.config.json`.
 - `workflows agents resolve` reports the effective model and config source for a workflow step.
 

@@ -14,6 +14,81 @@ function run(root, ...args) {
 	});
 }
 
+test("workspace check accepts formatting differences without changing files", (context) => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-workflows-check-"));
+	context.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const configPath = path.join(root, "workspace.config.json");
+	const config = {
+		artifactDirectories: ["prds", "plans", "designs", "research", "docs"],
+	};
+	for (const content of [
+		JSON.stringify(config),
+		JSON.stringify(config, null, 2),
+	]) {
+		fs.writeFileSync(configPath, content);
+		const result = run(root, "check");
+		assert.equal(result.status, 0, result.stdout + result.stderr);
+		assert.equal(fs.readFileSync(configPath, "utf8"), content);
+	}
+
+	const biomeConfig = JSON.stringify({
+		formatter: { enabled: true },
+		overrides: [
+			{ includes: ["workspace.config.json"], formatter: { enabled: true } },
+		],
+		linter: {
+			rules: { recommended: true, suspicious: { noDebugger: "error" } },
+		},
+	});
+	fs.writeFileSync(path.join(root, "biome.json"), biomeConfig);
+	const sourcePath = path.join(root, "example.js");
+	const source = 'export const value={name:"example"}';
+	fs.writeFileSync(sourcePath, source);
+	const result = run(root, "check");
+	assert.equal(result.status, 0, result.stdout + result.stderr);
+	assert.equal(fs.readFileSync(sourcePath, "utf8"), source);
+	assert.equal(
+		fs.readFileSync(path.join(root, "biome.json"), "utf8"),
+		biomeConfig,
+	);
+
+	// Consumer lint rules must still reject actual code problems.
+	fs.writeFileSync(sourcePath, "debugger;\n");
+	const invalidSource = run(root, "check");
+	assert.equal(invalidSource.status, 1);
+	assert.match(invalidSource.stdout + invalidSource.stderr, /noDebugger/);
+	assert.equal(fs.readFileSync(sourcePath, "utf8"), "debugger;\n");
+});
+
+test("workspace check preserves syntax, settings, and integrity failures", (context) => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-workflows-check-"));
+	context.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const configPath = path.join(root, "workspace.config.json");
+	for (const [content, diagnostic] of [
+		["{broken", /could not be read as JSON/],
+		['{"autoMode":{"enabled":"yes"}}', /invalid autoMode configuration/],
+	]) {
+		fs.writeFileSync(configPath, content);
+		const result = run(root, "check");
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, diagnostic);
+		assert.equal(fs.readFileSync(configPath, "utf8"), content);
+	}
+	fs.writeFileSync(configPath, '{"artifactDirectories":["prds"]}');
+	fs.mkdirSync(path.join(root, "prds"));
+	const artifact =
+		"# Fixture\n\n- PRD ID: `PRD-20261102-duplicate`\n- Status: `draft`\n";
+	for (const name of ["first.md", "second.md"]) {
+		fs.writeFileSync(path.join(root, "prds", name), artifact);
+	}
+	const invalidArtifacts = run(root, "check");
+	assert.equal(invalidArtifacts.status, 1);
+	assert.match(
+		invalidArtifacts.stdout + invalidArtifacts.stderr,
+		/Duplicate artifact ID/,
+	);
+});
+
 test("workspace check validates model config keys and values", (context) => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-workflows-check-"));
 	context.after(() => fs.rmSync(root, { recursive: true, force: true }));
