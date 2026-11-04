@@ -1,5 +1,12 @@
 # agent-workflows
 
+## 0.2.8
+
+### Patch Changes
+
+- ebbcadc: Publish publicly to npm with GitHub trusted publishing and update installation
+  and maintainer setup guidance for the public registry.
+
 ## 0.2.7
 
 ### Patch Changes
