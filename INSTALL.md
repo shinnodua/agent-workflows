@@ -55,21 +55,22 @@ use their official installation instructions for the user's platform. Keep an
 existing package manager; Bun is the default for a new workspace, even when npm
 or pnpm is used to install the dependency in an existing project.
 
-The package is published to GitHub Packages. Preserve existing registry settings
-and add this scope mapping to the target's `.npmrc` if absent (configuration):
+The package is distributed publicly through npm at
+`https://registry.npmjs.org`. Public installation requires no npm or GitHub
+authentication. Preserve existing registry settings for unrelated packages.
+
+If an existing project or user `.npmrc` maps `@shinnodua` to GitHub Packages,
+replace only that scope mapping with this public npm override (configuration):
 
 ```ini
-@shinnodua:registry=https://npm.pkg.github.com
+@shinnodua:registry=https://registry.npmjs.org
 ```
 
-The user needs package read access and authentication configured through their
-package manager's supported credential mechanism. Follow
-[GitHub's npm registry authentication instructions](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry#authenticating-to-github-packages);
-GitHub documents a personal access token (classic) with appropriate package-read
-permissions. [Bun supports npmrc registry configuration](https://bun.sh/docs/install/npmrc).
-Keep secret values out of repository files, command examples, chat, and logs.
-If authentication requires the user, let them complete it privately and resume
-afterward. A scope mapping alone does not authenticate a package download.
+Existing lockfiles can retain GitHub Packages tarball URLs. Refresh this
+dependency with the project's package manager after changing the mapping and
+review the lockfile diff; preserve unrelated dependencies and configuration.
+If npm reports the package or requested version as missing, report that release
+prerequisite rather than asking for GitHub package credentials.
 
 **Ready to continue:** target root, current setup state, package-manager choice,
 required tools, and registry/access prerequisites are known. Report any access

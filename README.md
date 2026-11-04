@@ -32,6 +32,9 @@ Or install it in a project as a dev dependency:
 bun add --dev @shinnodua/agent-workflows
 ```
 
+The public npm package requires no authentication. If you previously used GitHub
+Packages, follow [the registry migration notes](#migrating-from-github-packages).
+
 Then initialize the project. Use `workflows` after a global install, or
 `bunx workflows` when the package is installed as a project dev dependency:
 
@@ -252,17 +255,79 @@ GitHub Actions runs CI on pull requests and pushes to `main`. The release
 workflow uses Changesets to open a version PR, then publishes after that PR is
 merged.
 
-The release workflow publishes to GitHub Packages. The package must stay scoped
-as `@shinnodua/agent-workflows`, and repository Actions settings must allow
-GitHub Actions to create pull requests. The workflow uses `secrets.GITHUB_TOKEN`
-with `packages: write`, so no npm registry token is required.
+The release workflow publishes `@shinnodua/agent-workflows` publicly to
+`https://registry.npmjs.org`. It uses Node 24, npm 11, and npm trusted publishing
+through GitHub OIDC (`id-token: write`). `GITHUB_TOKEN` supports repository
+automation; no npm publish token is required in CI. Repository Actions settings
+must allow GitHub Actions to create pull requests.
 
-To install from GitHub Packages, configure the package scope in the consuming
-project or user npm config:
+### npm maintainer setup
+
+Complete these steps before relying on automated publishing:
+
+1. Confirm your npm account owns or has publish access to the `@shinnodua` scope.
+   Check whether the package and intended version already exist on npm:
+
+   ```sh
+   npm view @shinnodua/agent-workflows versions --registry=https://registry.npmjs.org
+   ```
+
+   An E404 can indicate an unpublished package or missing access; verify ownership
+   in your npm account before continuing. Never reuse a published version.
+2. If the package is absent, publish its first version from a validated checkout
+   using your npm account. These commands publish a real public package; run them
+   only when ready to release:
+
+   ```sh
+   npm login --registry=https://registry.npmjs.org
+   bun run package:build
+   npm publish --access public --registry=https://registry.npmjs.org
+   ```
+
+   Complete npm's authentication/2FA prompt privately. Keep the checkout's version
+   aligned with the version you publish; subsequent versions remain managed by
+   Changesets.
+3. In the npm package's Settings → Trusted Publisher, select GitHub Actions and
+   configure:
+
+   | Field | Value |
+   | --- | --- |
+   | Organization or user | `shinnodua` |
+   | Repository | `agent-workflows` |
+   | Workflow filename | `release.yml` |
+   | Environment | Leave empty; this workflow has no environment binding |
+   | Allowed actions | Enable direct `npm publish` |
+
+4. Merge package changes with a changeset, then merge the generated version PR.
+   The release workflow validates and publishes the new version. Confirm its
+   availability with `npm view` and an anonymous install in a clean project.
+
+See [npm's trusted publishing documentation](https://docs.npmjs.com/trusted-publishers/)
+for account-side configuration and troubleshooting. Local validation and package
+dry-runs do not verify npm ownership, trusted publisher configuration, or a live
+publication.
+
+### Migrating from GitHub Packages
+
+For fresh installations with the default npm registry, no `.npmrc` is needed.
+If project or user configuration previously mapped `@shinnodua` to GitHub
+Packages, replace only that scope mapping, preserving unrelated settings:
 
 ```ini
-@shinnodua:registry=https://npm.pkg.github.com
+@shinnodua:registry=https://registry.npmjs.org
 ```
+
+For a project-level override, you can run:
+
+```sh
+npm config set '@shinnodua:registry' https://registry.npmjs.org --location=project
+```
+
+Existing lockfiles may still contain GitHub Packages tarball URLs. Refresh this
+dependency with your package manager and review its lockfile changes without
+deleting unrelated dependencies or configuration. Package versions must exist
+on npm before consumers can migrate; the registry change alone does not copy
+previous GitHub releases.
 
 ## Project Setup
 

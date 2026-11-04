@@ -14,7 +14,8 @@
 		"dashboard"
 	],
 	"publishConfig": {
-		"registry": "https://npm.pkg.github.com"
+		"registry": "https://registry.npmjs.org",
+		"access": "public"
 	},
 	"bin": {
 		"workflows": "./bin/workflows.js"
