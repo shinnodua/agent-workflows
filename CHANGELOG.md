@@ -1,5 +1,11 @@
 # agent-workflows
 
+## 0.2.9
+
+### Patch Changes
+
+- 7aa38d9: Add a domain-aware Security role to sprint meetings and standalone security reviews of research, PRDs, plans, code, and solutions. Include runtime agent discovery, configurable models, upgrade defaults, and security-review command shims.
+
 ## 0.2.8
 
 ### Patch Changes
