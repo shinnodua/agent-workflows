@@ -587,6 +587,7 @@ test("update backfills visible model defaults in legacy configs without replacin
 		"ui-ux-designer": inheritedModels,
 		"backend-developer": inheritedModels,
 		"frontend-developer": inheritedModels,
+		security: inheritedModels,
 	});
 	assert.deepEqual(migrated.workflowModels, { planning: {}, coding: {} });
 
@@ -679,4 +680,120 @@ test("packaged add-project helper targets a consumer rather than the source temp
 	assert.equal(fs.readFileSync(profilePath, "utf8"), profileBefore);
 	assert.equal(fs.readFileSync(sourceProfile, "utf8"), sourceBefore);
 	assert.equal(fs.existsSync(path.join(root, ".gitmodules")), false);
+});
+
+test("security discovery, legacy migration, and model resolution stay integrated", (context) => {
+	const root = fs.mkdtempSync(
+		path.join(os.tmpdir(), "agent-workflows-security-"),
+	);
+	context.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const initialized = run(root, "init");
+	assert.equal(initialized.status, 0, initialized.stdout + initialized.stderr);
+	const configPath = path.join(root, "workspace.config.json");
+	const readConfig = () => JSON.parse(fs.readFileSync(configPath, "utf8"));
+	const inherited = {
+		codex: "inherit",
+		antigravity: "inherit",
+		claude: "inherit",
+	};
+	assert.deepEqual(readConfig().agentModels.security, inherited);
+	const discovery = [
+		"roles/security.md",
+		".agents/agents/security/agent.md",
+		".claude/agents/security.md",
+		".agents/skills/security-review/SKILL.md",
+		".agents/skills/security-review/agents/openai.yaml",
+		".codex/prompts/security-review.md",
+		".claude/skills/security-review/SKILL.md",
+		"commands/security-review.md",
+	];
+	for (const relative of discovery) {
+		assert.ok(fs.existsSync(path.join(root, relative)), relative);
+	}
+	// Simulate a consuming workspace from before Security was introduced.
+	const legacy = readConfig();
+	delete legacy.agentModels.security;
+	legacy.agentModels["tech-lead"] = { antigravity: "pro", claude: "sonnet" };
+	legacy.workflowModels.planning = { "tech-lead": { antigravity: "flash" } };
+	legacy.projectNote = "preserve";
+	fs.writeFileSync(configPath, JSON.stringify(legacy));
+	for (const relative of discovery) fs.rmSync(path.join(root, relative));
+	const updated = run(root, "update");
+	assert.equal(updated.status, 0, updated.stdout + updated.stderr);
+	const migrated = readConfig();
+	assert.deepEqual(migrated.agentModels.security, inherited);
+	assert.deepEqual(
+		migrated.agentModels["tech-lead"],
+		legacy.agentModels["tech-lead"],
+	);
+	assert.deepEqual(
+		migrated.workflowModels.planning,
+		legacy.workflowModels.planning,
+	);
+	assert.equal(migrated.projectNote, "preserve");
+	for (const relative of discovery)
+		assert.ok(fs.existsSync(path.join(root, relative)), relative);
+
+	migrated.agentModels.security = { antigravity: "pro", claude: "sonnet" };
+	migrated.workflowModels.research = { default: { antigravity: "flash" } };
+	migrated.workflowModels.planning.security = { antigravity: "inherit" };
+	fs.writeFileSync(configPath, JSON.stringify(migrated));
+	const resolve = (step) => {
+		const result = run(
+			root,
+			"agents",
+			"resolve",
+			step,
+			"security",
+			"--format",
+			"antigravity",
+			"--json",
+		);
+		assert.equal(result.status, 0, result.stderr);
+		return JSON.parse(result.stdout);
+	};
+	assert.equal(resolve("meeting").model, "pro");
+	assert.equal(resolve("prd").model, "pro");
+	assert.equal(resolve("validation").model, "pro");
+	assert.equal(resolve("research").model, "flash");
+	assert.equal(resolve("planning").model, "inherit");
+	const synced = run(root, "agents", "sync", "--format", "antigravity");
+	assert.equal(synced.status, 0, synced.stderr);
+	assert.match(
+		fs.readFileSync(
+			path.join(root, ".agents/agents/security/agent.md"),
+			"utf8",
+		),
+		/^model: pro$/m,
+	);
+	assert.match(
+		fs.readFileSync(path.join(root, ".claude/agents/security.md"), "utf8"),
+		/^model: sonnet$/m,
+	);
+	const refreshed = run(root, "update");
+	assert.equal(refreshed.status, 0, refreshed.stderr);
+	assert.deepEqual(
+		readConfig().agentModels.security,
+		migrated.agentModels.security,
+	);
+	assert.deepEqual(readConfig().workflowModels, migrated.workflowModels);
+	const codex = run(
+		root,
+		"agents",
+		"resolve",
+		"meeting",
+		"security",
+		"--format",
+		"codex",
+		"--json",
+	);
+	assert.equal(codex.status, 0, codex.stderr);
+	assert.equal(JSON.parse(codex.stdout).model, "inherit");
+	assert.match(
+		fs.readFileSync(
+			path.join(root, ".agents/agents/security/agent.md"),
+			"utf8",
+		),
+		/^model: inherit$/m,
+	);
 });

@@ -18,7 +18,7 @@
     },
     {
       "id": "review",
-      "label": "Optional role review"
+      "label": "Six-role sprint review"
     },
     {
       "id": "planning",
@@ -26,7 +26,7 @@
     },
     {
       "id": "delivery",
-      "label": "Repository implementers"
+      "label": "Independent role work"
     }
   ],
   "phases": [
@@ -92,8 +92,8 @@
       "col": 2,
       "type": "messagebus",
       "label": "Sprint meeting",
-      "sublabel": "all roles review UI/UX",
-      "width": 164
+      "sublabel": "six roles incl. Security",
+      "width": 188
     },
     {
       "id": "auto",
@@ -129,7 +129,7 @@
       "type": "database",
       "label": "Submodule plans",
       "sublabel": "only affected repos",
-      "width": 150
+      "width": 138
     },
     {
       "id": "approvePlan",
@@ -138,7 +138,7 @@
       "type": "security",
       "label": "Approve root plan",
       "sublabel": "implementation gate",
-      "width": 154
+      "width": 140
     },
     {
       "id": "delivery",
@@ -147,7 +147,43 @@
       "type": "backend",
       "label": "Implement + validate",
       "sublabel": "shared → API → frontend",
-      "width": 164
+      "width": 136
+    },
+    {
+      "id": "securityRequest",
+      "lane": "delivery",
+      "col": 0,
+      "type": "external",
+      "label": "Review request",
+      "sublabel": "artifact, code or solution",
+      "width": 144
+    },
+    {
+      "id": "securityContext",
+      "lane": "delivery",
+      "col": 1,
+      "type": "database",
+      "label": "Domain + evidence",
+      "sublabel": "actors, assets, boundaries",
+      "width": 144
+    },
+    {
+      "id": "securityReview",
+      "lane": "delivery",
+      "col": 2,
+      "type": "security",
+      "label": "Security review",
+      "sublabel": "abuse, access, data, logic",
+      "width": 144
+    },
+    {
+      "id": "securityFindings",
+      "lane": "delivery",
+      "col": 3,
+      "type": "messagebus",
+      "label": "Findings + actions",
+      "sublabel": "evidence + mitigations",
+      "width": 144
     }
   ],
   "edges": [
@@ -201,7 +237,7 @@
       "id": "review-meeting",
       "from": "prdReview",
       "to": "meeting",
-      "label": "optional meeting",
+      "label": "auto or chosen",
       "variant": "dashed",
       "role": "branch"
     },
@@ -233,6 +269,21 @@
       "from": "approvePlan",
       "to": "delivery",
       "label": "approved"
+    },
+    {
+      "id": "security-request-context",
+      "from": "securityRequest",
+      "to": "securityContext"
+    },
+    {
+      "id": "security-context-review",
+      "from": "securityContext",
+      "to": "securityReview"
+    },
+    {
+      "id": "security-review-findings",
+      "from": "securityReview",
+      "to": "securityFindings"
     }
   ],
   "cards": [
@@ -241,8 +292,8 @@
       "title": "PRD choices",
       "items": [
         "Manual mode retains optional design and sprint meeting steps.",
-        "During sprint meetings, every role reviews the design and contributes UI/UX improvements.",
-        "Accepted feedback updates the PRD and editable design artifacts before approval."
+        "Every sprint meeting includes Project Manager, Tech Lead, UI/UX Designer, Backend Developer, Frontend Developer, and Security.",
+        "All roles review UX; Security adds domain-specific abuse, privacy, access, logic, and dependency findings before PRD approval."
       ]
     },
     {
@@ -252,6 +303,16 @@
         "Developer starts a feature; workspace metadata enables the automatic path.",
         "Research → PRD → design → sprint meeting → approvals → plans → implementation and validation.",
         "Only human-only decisions pause the flow; failed validation blocks completion."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Security review",
+      "items": [
+        "$security-review accepts research, PRDs, plans, code, and solutions; direct Security role requests use the same contract.",
+        "Verify selected library versions, adoption, maintenance, provenance, and advisories; popularity alone does not prove security.",
+        "Return prioritized findings with severity, confidence, evidence, mitigation, verification, owners, and coverage limits.",
+        "Standalone review is advisory: no approval gate or automatic implementation; preserve artifact content and status unless edits are requested."
       ]
     },
     {
@@ -272,6 +333,62 @@
         "Report changed submodules and pointer status; mark unchecked external settings Unknown with an owner.",
         "The developer owns commits."
       ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Workflow specification",
+      "items": [
+        "Reflects the local workflow specification, including uncommitted Security additions; not a pinned repository snapshot.",
+        "Sources: workflows.md, roles/security.md, .agents/skills/security-review/SKILL.md, and .agents/skills/sprint-meeting/SKILL.md."
+      ]
+    }
+  ],
+  "semanticChecks": {
+    "allowedRoots": [
+      "request",
+      "securityRequest"
+    ],
+    "allowedTerminals": [
+      "delivery",
+      "securityFindings"
+    ],
+    "requiredPaths": [
+      {
+        "from": "securityRequest",
+        "to": "securityFindings"
+      },
+      {
+        "from": "request",
+        "to": "delivery"
+      }
+    ],
+    "requiredEdges": [
+      {
+        "from": "prdReview",
+        "to": "meeting"
+      },
+      {
+        "from": "meeting",
+        "to": "approvePrd"
+      }
+    ]
+  },
+  "groups": [
+    {
+      "id": "directSecurity",
+      "label": "Security: standalone review",
+      "lane": "delivery",
+      "fromCol": 0,
+      "toCol": 3,
+      "variant": "security"
+    },
+    {
+      "id": "repositoryWork",
+      "label": "Repo implementers",
+      "lane": "delivery",
+      "fromCol": 5,
+      "toCol": 5,
+      "variant": "dashed"
     }
   ]
 }

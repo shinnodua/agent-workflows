@@ -230,10 +230,18 @@ flowchart LR
     appValidate[Validate app frontend repositories]
   end
 
+  subgraph security [Security: standalone advisory review]
+    securityRequest([Developer requests security review])
+    securityContext[Read target, product domain, and linked evidence]
+    securityReview[Assess abuse, access, data, logic, and dependency trust]
+    securityFindings([Return findings, mitigations, and verification gaps])
+    securityRequest --> securityContext --> securityReview --> securityFindings
+  end
+
   frontendReady((Frontend stage ready))
   frontendDone((Frontend stage complete))
   meetingChoice{Run optional sprint meeting?}
-  sprintMeeting[Review PRD and design with role agents]
+  sprintMeeting[Review PRD and design with all roles including Security]
 
   finish([Report changed repos, validation, and submodule pointer status])
 
@@ -274,7 +282,8 @@ flowchart LR
 | Draft PRD | Project Manager | Developer | `prds/PRD-*.md` with user value, scope, requirements, and acceptance criteria (status: `draft`) |
 | UI/UX design | UI/UX Designer | Project Manager, Tech Lead | Optional manually; auto mode creates it for affected UI/UX or records non-applicability |
 | PRD review and clarification | Project Manager | Developer | Updated PRD with resolved ambiguity, starting from `draft` or `design-done` |
-| Sprint meeting during PRD review | Project Manager, Tech Lead, UI/UX Designer, Backend Developer, Frontend Developer | Developer for product decisions | All roles review the design and contribute UI/UX feedback; required in auto mode, optional manually; improved PRD, design, and meeting record |
+| Standalone security review | Security | Relevant product and implementation roles | Domain-aware findings for research, PRDs, plans, code, or solutions; advisory, preserves artifact status |
+| Sprint meeting during PRD review | Project Manager, Tech Lead, UI/UX Designer, Backend Developer, Frontend Developer, Security | Developer for product decisions | All roles review the design and contribute UI/UX feedback; required in auto mode, optional manually; improved PRD, design, and meeting record |
 | PRD approval | Developer, or agent in auto mode | Project Manager | PRD status `approved` after review, from `draft` or `design-done`; auto mode records its authority |
 | Root overview plan | Tech Lead | Project Manager, UI/UX Designer | `plans/PLAN-*.md` with architecture, ownership, sequence, validation, and risks |
 | Submodule detail plans | Tech Lead via sub-agents | Core, Backend, Frontend roles | `modules/*/plans/*.md` for only affected repositories |
@@ -380,7 +389,10 @@ catalog. The legacy format name `agents` remains an alias for `codex`.
     UI/UX design is complete; skipping it does not block approval.
   - Run a visible, time-boxed PRD review meeting with all workspace role
     sub-agents: Project Manager, Tech Lead, UI/UX Designer, Backend Developer,
-    and Frontend Developer.
+    Frontend Developer, and Security.
+  - Require Security to apply `roles/security.md` to domain-specific abuse, access,
+    privacy, logic, and dependency trust; record findings and coverage gaps.
+  - Use bounded parallel batches when runtime capacity cannot fit all six roles.
   - Require every sub-agent to read the PRD and related documents before
     discussing requirements, risks, unanswered questions, and PRD improvements.
   - Have every role review linked design artifacts, or the PRD's UX flows when
@@ -441,6 +453,30 @@ catalog. The legacy format name `agents` remains an alias for `codex`.
   - Ask the developer clarifying questions before changing the plan.
   - After the developer answers, update the plan according to those answers.
   - Do not approve the plan or edit product code.
+
+### Security Review Command
+
+- `$security-review <artifact-id-or-path-or-scoped-request>` or
+  `/security-review <artifact-id-or-path-or-scoped-request>`
+  - Skill: `.agents/skills/security-review/SKILL.md`.
+  - Codex prompt: `.codex/prompts/security-review.md`.
+  - Command: `commands/security-review.md`.
+  - Role: `roles/security.md`; shared agent: `workspace-security`;
+    Claude agent: `security`.
+  - Review research, PRDs, plans, code, or solutions using the product's domain,
+    actors, data assets, legitimate flows, and trust boundaries. Direct Security
+    role requests follow the same contract.
+  - Assess abuse/bypass, unauthorized access, disclosure, exploitable logic,
+    and library/solution adoption and trust using current primary evidence.
+  - Return prioritized, actionable findings with confidence, evidence, mitigations,
+    verification, owners, and coverage limits. Return in chat by default; save
+    only when requested or required by established project convention.
+  - Review drafts without approval or auto-mode feature progression. Preserve
+    target content/status unless edits are requested; retain existing approval
+    authority. This command does not implement fixes.
+  - Resolve Security's model using `research`, `prd`, `planning`, or `validation`
+    for the target type; meetings use `meeting`. Existing workspaces gain
+    missing defaults during `workflows update` without losing custom values.
 
 ### Research Command
 

@@ -55,8 +55,8 @@ discover custom agents, commands, and skills from local `.agents/agents/`,
 imports the shared `AGENTS.md` rules. Run `/project-setup` in either agent.
 
 To choose a model for each role, edit `agentModels` in `workspace.config.json`.
-The five keys are `project-manager`, `tech-lead`, `ui-ux-designer`,
-`backend-developer`, and `frontend-developer`. Each defaults to `inherit`; replace
+The six keys are `project-manager`, `tech-lead`, `ui-ux-designer`,
+`backend-developer`, `frontend-developer`, and `security`. Each defaults to `inherit`; replace
 any value with a model ID, or use an object with separate `codex`,
 `antigravity`, and `claude` values when using multiple coding agents. For example:
 
@@ -71,7 +71,8 @@ any value with a model ID, or use an object with separate `codex`,
     },
     "ui-ux-designer": "inherit",
     "backend-developer": "inherit",
-    "frontend-developer": "inherit"
+    "frontend-developer": "inherit",
+    "security": "inherit"
   }
 }
 ```
@@ -133,6 +134,7 @@ After a PRD exists, run a role-agent review meeting from the active agent chat:
 
 ```sh
 /sprint-meeting <prd-id>
+/security-review <artifact-id-or-path-or-scoped-request>
 ```
 
 To let the agent continue through the full feature workflow after you start a
@@ -159,6 +161,7 @@ auto-mode on|off|toggle|status
 project-setup
 add-project [repository-url]
 sprint-meeting
+security-review
 bunx workflows dashboard
 bunx workflows update
 bunx workflows integrity
@@ -341,3 +344,25 @@ After initialization:
 
 See [docs/workspace-template-setup.md](docs/workspace-template-setup.md) for the
 full adaptation checklist.
+
+### Security Reviews
+
+Security participates in every sprint meeting, contributing domain-aware threat,
+privacy, dependency, and design feedback alongside the other five roles.
+For a standalone review use `$security-review <artifact-id-or-path-or-scoped-request>`
+or `/security-review ...`, or ask the Security role directly. Research, draft
+PRDs, plans, code, and solutions can be reviewed without changing approval status.
+Results appear in the active conversation by default; reviewed artifacts remain
+unchanged unless edits are requested.
+
+The reviewer loads product context and assesses bypass and abuse, unauthorized
+access, data disclosure, exploitable logic, and the actual libraries or solutions
+selected. Findings distinguish severity from confidence and include evidence,
+practical mitigation, verification, and coverage limits. Popularity alone does
+not establish trust or security. See [Security role](roles/security.md).
+
+Security uses the existing model configuration and precedence. Direct reviews
+resolve the `research`, `prd`, `planning`, or `validation` step according to the
+target; sprint meetings use `meeting`. Existing workspaces receive missing
+Security defaults and discovery shims through `bunx workflows update`; reload
+the agent session afterward. No new environment variables or dependencies are needed.

@@ -40,6 +40,7 @@ in the workspace root `meeting-logs/` directory with this filename pattern:
 | `@workspace-ui-ux-designer` | `roles/ui-ux-designer.md` | `<participated/skipped>` | `<notes>` |
 | `@workspace-backend-developer` | `roles/backend-developer.md` | `<participated/skipped>` | `<notes>` |
 | `@workspace-frontend-developer` | `roles/frontend-developer.md` | `<participated/skipped>` | `<notes>` |
+| `@workspace-security` | `roles/security.md` | `<participated/skipped>` | `<notes>` |
 
 ## Design Review
 
@@ -50,6 +51,7 @@ in the workspace root `meeting-logs/` directory with this filename pattern:
 | `@workspace-ui-ux-designer` | `<artifact or PRD UX sections>` | `<improvement or "No change needed" with reason>` | `<location or "None">` | `<accepted/rejected/follow-up/no change>` |
 | `@workspace-backend-developer` | `<artifact or PRD UX sections>` | `<improvement or "No change needed" with reason>` | `<location or "None">` | `<accepted/rejected/follow-up/no change>` |
 | `@workspace-frontend-developer` | `<artifact or PRD UX sections>` | `<improvement or "No change needed" with reason>` | `<location or "None">` | `<accepted/rejected/follow-up/no change>` |
+| `@workspace-security` | `<artifact or PRD UX sections>` | `<improvement or "No change needed" with reason>` | `<location or "None">` | `<accepted/rejected/follow-up/no change>` |
 
 ### Design Synthesis
 
@@ -60,6 +62,16 @@ in the workspace root `meeting-logs/` directory with this filename pattern:
 | Design artifact | Accepted change or follow-up | Update status | Owner |
 | --- | --- | --- | --- |
 | `<path or "None">` | `<specific change or "None">` | `<updated/follow-up/not applicable>` | `<agent or "None">` |
+
+## Security Review
+
+- Domain, assets, actors, and trust boundaries: `<summary>`
+- Scope and evidence reviewed: `<artifacts, code, dependency versions, sources>`
+- Coverage gaps and residual risks: `<details or "None">`
+
+| Finding | Severity and confidence | Evidence and abuse prerequisites | Domain/user impact | Mitigation and verification | Owner | Disposition / PRD update |
+| --- | --- | --- | --- | --- | --- | --- |
+| `<finding or "None within reviewed scope">` | `<severity, rationale, confidence, classification>` | `<location/source and scenario>` | `<impact>` | `<action and negative test>` | `<role/repository>` | `<accepted/rejected/follow-up and reason; section>` |
 
 ## Chat Timeline
 
@@ -129,6 +141,15 @@ Record concise user-visible meeting messages in chronological order.
   - `<update or "None">`
 - Risks:
   - `<risk or "None">`
+
+### @workspace-security
+
+- Findings:
+  - `<domain-specific security finding or "None within reviewed scope">`
+- Proposed PRD updates:
+  - `<requirement, abuse-case acceptance criterion, mitigation, or "None">`
+- Risks:
+  - `<residual risk, missing evidence, or "None">`
 
 ## Consolidated Questions And Answers
 
