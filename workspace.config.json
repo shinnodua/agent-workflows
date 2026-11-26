@@ -31,6 +31,11 @@
 			"codex": "inherit",
 			"antigravity": "inherit",
 			"claude": "inherit"
+		},
+		"security": {
+			"codex": "inherit",
+			"antigravity": "inherit",
+			"claude": "inherit"
 		}
 	},
 	"workflowModels": {

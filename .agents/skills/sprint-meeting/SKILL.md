@@ -38,11 +38,13 @@ If the client intercepts slash commands, use `$sprint-meeting` or
    - `.agents/agents/ui-ux-designer/agent.md`
    - `.agents/agents/backend-developer/agent.md`
    - `.agents/agents/frontend-developer/agent.md`
+   - `.agents/agents/security/agent.md`
    - `roles/project-manager.md`
    - `roles/tech-lead.md`
    - `roles/ui-ux-designer.md`
    - `roles/backend-developer.md`
    - `roles/frontend-developer.md`
+   - `roles/security.md`
 5. Read the PRD completely.
 6. Read related documents before spawning sub-agents:
    - Research sources linked from the PRD metadata or `Research Context`.
@@ -56,15 +58,18 @@ If the client intercepts slash commands, use `$sprint-meeting` or
    - Related documents being used.
    - Agent roster.
    - A statement that the active meeting is time-boxed to 5 minutes.
-8. Spawn all five workspace role sub-agents in parallel when the runtime provides
-   a sub-agent mechanism:
+8. Spawn all six workspace role sub-agents when the runtime provides
+   a sub-agent mechanism. Run independent reviews in parallel up to available
+   concurrency; use bounded batches when needed without omitting any role or
+   exceeding the active discussion budget:
    - `workspace-project-manager`
    - `workspace-tech-lead`
    - `workspace-ui-ux-designer`
    - `workspace-backend-developer`
    - `workspace-frontend-developer`
+   - `workspace-security`
    Resolve each role's `meeting` model from `workspace.config.json` using
-   `workflows agents resolve meeting <role> --format <agents|claude> --json`
+   `workflows agents resolve meeting <role> --format <codex|antigravity|claude> --json`
    before spawning. Pass a non-`inherit` model when the runtime supports it;
    report any selected model that cannot be applied.
 9. Give every sub-agent the same base packet:
@@ -73,6 +78,10 @@ If the client intercepts slash commands, use `$sprint-meeting` or
    - `project/PROJECT.md` and `project/repositories.json` context.
    - The agent's role file.
    - Meeting time box.
+   - For Security, apply `roles/security.md` to the product domain, abuse paths,
+     access boundaries, data exposure, exploitable logic, and dependency trust;
+     return prioritized findings with evidence, practical mitigations, and
+     coverage gaps. Distinguish severity from confidence.
    - Required response format from the `Sub-Agent Response Format` section.
    - A design review assignment: inspect every linked design artifact, or the
      PRD's UX flows and notes if none exists; identify a concrete UI/UX
@@ -93,8 +102,9 @@ If the client intercepts slash commands, use `$sprint-meeting` or
     - Final decisions and PRD updates.
 13. Each question must name who can answer it:
     - Use `@workspace-project-manager`, `@workspace-tech-lead`,
-      `@workspace-ui-ux-designer`, `@workspace-backend-developer`, and
-      `@workspace-frontend-developer` for agent-answerable questions.
+      `@workspace-ui-ux-designer`, `@workspace-backend-developer`,
+      `@workspace-frontend-developer`, and `@workspace-security` for
+      agent-answerable questions.
     - Use `@developer` for questions only the developer or product owner can
       answer.
     - Include every relevant agent mention on each question.
@@ -117,7 +127,7 @@ If the client intercepts slash commands, use `$sprint-meeting` or
       two follow-up rounds unless the remaining 5-minute active budget is too
       small.
     - **Design synthesis.** Route conflicting or dependent UI/UX suggestions to
-      the relevant agents. The UI/UX Designer synthesizes the five reviews into
+      the relevant agents. The UI/UX Designer synthesizes all six role reviews into
       accepted improvements, rejected suggestions with reasons, and unresolved
       design decisions.
     - **Convergence.** Continue until no unresolved agent-answerable questions
@@ -142,6 +152,10 @@ If the client intercepts slash commands, use `$sprint-meeting` or
     - Improve unclear requirements.
     - Resolve agent-answerable open questions.
     - Add missing acceptance criteria.
+    - Incorporate accepted security findings as domain-appropriate requirements,
+      abuse-case acceptance criteria, risks, and validation expectations. Record
+      Security findings, evidence gaps, and dispositions in the meeting log;
+      unverified or time-boxed risks remain explicit.
     - Add affected-platform, UX, data/API/package contract, risk, validation, or
       non-goal details when the agents identify gaps.
     - Reflect accepted UI/UX improvements in user flows, UX notes, and
@@ -184,6 +198,13 @@ Each sub-agent must return Markdown with these sections:
 - UI/UX contribution: <specific improvement and rationale, or "No change needed" with reason>
 - Affected flow, screen, or state: <location or "None">
 
+## Security Review
+
+- Security agent: prioritized findings with severity, confidence, evidence, abuse
+  prerequisites, impact, mitigation, verification, and owner from `roles/security.md`.
+- Other agents: relevant security concerns or "None".
+- Coverage gaps and residual risks: <details or "None">
+
 ## Agent-Answerable Questions And Answers
 
 | Question | Asked by | Assigned to | Round | Answer | Review outcome | PRD update |
@@ -207,7 +228,10 @@ Each sub-agent must return Markdown with these sections:
 
 The main agent is the meeting chair. The chair must:
 
-- Spawn every role sub-agent.
+- Spawn every role sub-agent, including Security; bounded batches preserve the
+  full roster when concurrency is limited.
+- Require Security review and record accepted mitigations, unresolved risks,
+  and evidence gaps alongside the design synthesis.
 - Keep the discussion inside the active 5-minute budget.
 - Merge duplicate questions before routing answers or asking the developer.
 - Run multiple routed answer rounds when needed.

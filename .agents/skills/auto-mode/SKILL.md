@@ -44,8 +44,9 @@ Advance through these stages in order, reusing verified artifacts if resuming:
    feature has no user-facing surface, record why design is not applicable in
    the PRD and continue with the PRD at `draft` status. Do not invent a visual
    artifact.
-4. **Sprint meeting:** Follow `sprint-meeting/SKILL.md`. All role agents review
-   the PRD and available design or UX notes. Resolve agent-answerable issues and
+4. **Sprint meeting:** Follow `sprint-meeting/SKILL.md`. All six role agents,
+   including Security, review the PRD and available design or UX notes.
+   Resolve agent-answerable issues and
    apply accepted improvements before continuing.
 5. **Approve PRD:** Follow `approve-prd/SKILL.md`. Check that requirements and
    human-only decisions are resolved, mark the PRD `approved`, and record

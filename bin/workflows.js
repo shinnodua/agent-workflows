@@ -25,6 +25,7 @@ const roleNames = [
 	"ui-ux-designer",
 	"backend-developer",
 	"frontend-developer",
+	"security",
 ];
 const workflowSteps = [
 	"research",
