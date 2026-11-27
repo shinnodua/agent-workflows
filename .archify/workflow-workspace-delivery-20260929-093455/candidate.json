@@ -370,6 +370,8 @@
       "dot": "emerald",
       "title": "Completion",
       "items": [
+        "After each workflow step, the main agent updates one versioned Markdown file per feature in task-summary/.",
+        "Task Summary records step outcomes, retry history, and verified token usage. Open the saved report from the dashboard or final chat.",
         "Each coding agent reports verified build, runtime, migration, and compatibility facts.",
         "Report Tech Lead, Security, and validation outcomes by repository, with owners for outstanding findings.",
         "Coordinator gives ordered developer Build, Run, and Roll out actions with breaking changes and validation limits.",
@@ -382,7 +384,7 @@
       "title": "Workflow specification",
       "items": [
         "Reflects the local workspace workflow specification.",
-        "Sources: workflows.md, roles/tech-lead.md, roles/security.md, and .agents/skills/approve-plan/repository-code-review.md."
+        "Sources: workflows.md, templates/task-summary-workflow.md, roles/tech-lead.md, roles/security.md, and .agents/skills/approve-plan/repository-code-review.md."
       ]
     }
   ],

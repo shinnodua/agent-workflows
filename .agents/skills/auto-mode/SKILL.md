@@ -82,6 +82,10 @@ Advance through these stages in order, reusing verified artifacts if resuming:
    implementation, review, validation, and human-only question sections in the final
    report alongside the operational handoff.
 
+After each stage and repository outcome, update the active feature’s
+[Task Summary](../../../templates/task-summary-workflow.md) before advancing.
+Include its link in the final chat handoff.
+
 At each stage, show a concise progress update and verify the required artifact
 or required review and validation results before advancing. Resolve questions
 that agents can answer from the PRD, research, design, code, and role knowledge. Ask the developer only

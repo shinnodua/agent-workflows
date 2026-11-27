@@ -9,6 +9,128 @@ import {
 } from "../artifactGrouping";
 
 describe("artifactGrouping", () => {
+	test("keeps an active research summary separate from a historical PRD", () => {
+		const prd = createArtifact({
+			type: "prd",
+			id: "PRD-20261101-older",
+			relativePath: "prds/older.md",
+		});
+		const research = createArtifact({
+			type: "research",
+			id: "RESEARCH-20261127-new",
+			relatedArtifactIds: ["PRD-20261101-older"],
+			relativePath: "research/new.md",
+		});
+		const provisionalId = "pending-research-20261127-new";
+		const summary = createArtifact({
+			type: "document",
+			relativePath: `task-summary/${provisionalId}.md`,
+			isTaskSummary: true,
+		});
+
+		const groups = buildTaskGroups([prd, research], {
+			[provisionalId]: summary,
+		});
+		expect(groups).toHaveLength(2);
+		expect(groups.find(({ key }) => key === provisionalId)?.artifacts).toEqual([
+			research,
+		]);
+		expect(groups.find(({ key }) => key === provisionalId)?.summary).toEqual(
+			summary,
+		);
+	});
+
+	test("reserves summary identity for its feature when legacy slugs collide", () => {
+		const id = "prd-20261127-collision";
+		const prd = createArtifact({
+			type: "prd",
+			id: id.toUpperCase(),
+			relativePath: "prds/current.md",
+			taskKey: "collision",
+		});
+		const legacy = createArtifact({
+			type: "research",
+			relativePath: "research/legacy.md",
+			taskKey: id,
+		});
+		const inheritedKey = createArtifact({
+			type: "research",
+			relativePath: "research/constructor.md",
+			taskKey: "constructor",
+		});
+		const summary = createArtifact({
+			type: "document",
+			relativePath: `task-summary/${id}.md`,
+			isTaskSummary: true,
+		});
+
+		for (const articles of [
+			[legacy, prd],
+			[prd, legacy],
+		]) {
+			const groups = buildTaskGroups([...articles, inheritedKey], {
+				[id]: summary,
+			});
+			expect(groups.find(({ key }) => key === id)?.artifacts).toEqual([prd]);
+			expect(groups.filter((group) => group.summary)).toHaveLength(1);
+		}
+		expect(
+			buildTaskGroups([legacy], { [id]: summary })[0]?.summary,
+		).toBeUndefined();
+	});
+
+	test("opens the correct summary for same-slug PRDs when search matches a plan", () => {
+		const firstId = "PRD-20261122-workflow-refresh";
+		const secondId = "PRD-20261127-workflow-refresh";
+		const taskKey = "workflow-refresh";
+		const firstPrd = createArtifact({
+			type: "prd",
+			id: firstId,
+			relativePath: "prds/first.md",
+			taskKey,
+			title: "Workflow refresh",
+			relatedArtifactIds: [secondId],
+		});
+		const secondPrd = createArtifact({
+			type: "prd",
+			id: secondId,
+			relativePath: "prds/second.md",
+			taskKey,
+			title: "Workflow refresh",
+		});
+		const secondPlan = createArtifact({
+			type: "plan",
+			prdId: secondId,
+			relativePath: "plans/second.md",
+			taskKey,
+		});
+		const firstResearch = createArtifact({
+			type: "research",
+			id: "RESEARCH-20261122-workflow-refresh",
+			relatedArtifactIds: [firstId],
+			relativePath: "research/first.md",
+			taskKey,
+		});
+		secondPrd.relatedArtifactIds.push(firstResearch.id ?? "");
+		const secondSummary = createArtifact({
+			type: "document",
+			relativePath: "task-summary/second.md",
+			isTaskSummary: true,
+		});
+		const articles = [firstPrd, secondPrd, secondPlan, firstResearch];
+		const summaries = {
+			[firstId.toLowerCase()]: "unavailable" as const,
+			[secondId.toLowerCase()]: secondSummary,
+		};
+
+		expect(buildTaskGroups(articles, summaries)).toHaveLength(2);
+		const searched = buildTaskGroups(articles, summaries, [secondPlan]);
+		expect(searched).toHaveLength(1);
+		expect(searched[0]?.byType.prd).toEqual([secondPrd]);
+		expect(searched[0]?.byType.research).toEqual([]);
+		expect(searched[0]?.summary).toEqual(secondSummary);
+	});
+
 	test("groups artifacts by task key and prioritizes PRD title", () => {
 		const groups = buildTaskGroups([
 			createArtifact({

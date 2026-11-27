@@ -172,6 +172,18 @@ settings, breaking changes, migrations, app/web/API setup, per-repository review
 and unresolved facts with an owner. `None` means the category was checked and
 found inapplicable; unknown external state must be reported as `Unknown`.
 
+## Task Summary
+
+The main agent records each step in one Markdown file under `task-summary/`
+before continuing or waiting for approval. Use the shared
+[recording procedure](templates/task-summary-workflow.md) and
+[template](templates/task-summary-template.md). In manual and auto mode,
+the same file follows the feature from its first outcome through final handoff.
+
+The local dashboard opens a read-only copy from the task card. The final chat
+handoff links to the file. The summary keeps verified token counts and describes
+usage gaps when telemetry is missing or covers several workflow steps.
+
 ## PRD And Planning Workflow
 
 Every feature or implementation task needs a saved PRD before planning or code

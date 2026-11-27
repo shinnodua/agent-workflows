@@ -3,11 +3,15 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, type Plugin, type ViteDevServer } from "vite";
 import {
 	buildScanReportFromResults,
 	type FileScanResult,
 } from "./src/features/task-status/utils/hardnessScanner";
+import {
+	readTaskSummaries,
+	readTaskSummaryEvidence,
+} from "./src/features/task-status/utils/taskSummaryFiles";
 import { parseWorkspaceMetadata } from "./src/features/task-status/utils/workspaceMetadata";
 import type {
 	Artifact,
@@ -503,6 +507,22 @@ function sortArtifactsByTime(first: Artifact, second: Artifact) {
 }
 
 function workspaceArtifactsPlugin(): Plugin {
+	function liveArtifacts(server: Pick<ViteDevServer, "middlewares">) {
+		server.middlewares.use((request, response, next) => {
+			if (request.url?.split("?")[0] !== artifactEndpoint) return next();
+
+			response.setHeader("Cache-Control", "no-store");
+			response.setHeader("Content-Type", "application/json");
+			response.end(
+				JSON.stringify({
+					...loadArtifactPayload(),
+					taskSummaries: readTaskSummaries(workspaceRoot),
+					taskSummaryEvidence: readTaskSummaryEvidence(workspaceRoot),
+				}),
+			);
+		});
+	}
+
 	return {
 		name: "workspace-artifacts",
 		resolveId(id) {
@@ -546,18 +566,7 @@ export const generatedAt = ${JSON.stringify(payload.generatedAt)};`;
 			server.ws.send({ type: "full-reload" });
 		},
 		configureServer(server) {
-			server.middlewares.use((request, response, next) => {
-				const requestPath = request.url?.split("?")[0];
-
-				if (requestPath !== artifactEndpoint) {
-					next();
-					return;
-				}
-
-				response.setHeader("Cache-Control", "no-store");
-				response.setHeader("Content-Type", "application/json");
-				response.end(JSON.stringify(loadArtifactPayload()));
-			});
+			liveArtifacts(server);
 
 			for (const target of artifactTargets) {
 				const targetPath = path.join(workspaceRoot, target.directory);
@@ -566,6 +575,7 @@ export const generatedAt = ${JSON.stringify(payload.generatedAt)};`;
 				}
 			}
 		},
+		configurePreviewServer: liveArtifacts,
 	};
 }
 

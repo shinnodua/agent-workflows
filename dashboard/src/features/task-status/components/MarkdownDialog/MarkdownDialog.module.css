@@ -8,6 +8,16 @@
 	@apply fixed inset-y-0 right-0 z-50 min-w-[420px] max-w-[calc(100vw-48px)] overflow-hidden border-l-[4px] border-black bg-background shadow-neo-lg;
 }
 
+@media (max-width: 467px) {
+	.drawer {
+		@apply min-w-0 max-w-full;
+	}
+
+	.resizeHandle {
+		@apply hidden;
+	}
+}
+
 .resizeHandle {
 	@apply absolute inset-y-0 left-0 z-20 w-3 -translate-x-1/2 cursor-ew-resize touch-none appearance-none border-0 bg-transparent p-0 focus-visible:outline focus-visible:outline-[4px] focus-visible:outline-offset-2 focus-visible:outline-neo-blue;
 }

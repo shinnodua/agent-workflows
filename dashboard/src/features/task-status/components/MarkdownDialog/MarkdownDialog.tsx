@@ -30,11 +30,17 @@ export function MarkdownDialog(props: MarkdownDialogProps) {
 		startX: number;
 	} | null>(null);
 	const closeTimeout = useRef<number | null>(null);
+	const drawer = useRef<HTMLElement | null>(null);
 	const blocks = renderMarkdownBlocks(artifact.content, {
 		artifacts,
 		currentArtifact: artifact,
 		onNavigate,
 	});
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Following an evidence link re-establishes focus in the preview.
+	useEffect(() => {
+		drawer.current?.querySelector<HTMLElement>("[data-preview-close]")?.focus();
+	}, [artifact.relativePath]);
 
 	useEffect(
 		() => () => {
@@ -134,6 +140,7 @@ export function MarkdownDialog(props: MarkdownDialogProps) {
 					isClosing ? styles.backdropExit : styles.backdropEnter
 				}`}
 				onClick={requestClose}
+				tabIndex={-1}
 				type="button"
 			/>
 			<aside
@@ -143,6 +150,7 @@ export function MarkdownDialog(props: MarkdownDialogProps) {
 					isClosing ? styles.drawerExit : styles.drawerEnter
 				}`}
 				role="dialog"
+				ref={drawer}
 				style={{ width: dialogWidth }}
 			>
 				<button
@@ -173,7 +181,9 @@ function clampDialogWidth(width: number) {
 	const maxWidth =
 		typeof window === "undefined"
 			? defaultDialogWidth
-			: Math.max(minDialogWidth, window.innerWidth - viewportGutter);
+			: window.innerWidth < minDialogWidth + viewportGutter
+				? window.innerWidth
+				: window.innerWidth - viewportGutter;
 
 	return Math.min(Math.max(width, minDialogWidth), maxWidth);
 }
@@ -210,6 +220,7 @@ function MarkdownDialogHeader(props: {
 					) : null}
 					<Button
 						aria-label="Close markdown preview"
+						data-preview-close
 						onClick={onClose}
 						size="icon"
 						variant="red"
@@ -218,16 +229,18 @@ function MarkdownDialogHeader(props: {
 					</Button>
 				</div>
 			</div>
-			<a
-				className={styles.rawLink}
-				href={artifact.sourceHref}
-				target="_blank"
-				rel="noreferrer"
-			>
-				<Button size="sm" variant="white">
-					Open raw
-				</Button>
-			</a>
+			{artifact.sourceHref && (
+				<a
+					className={styles.rawLink}
+					href={artifact.sourceHref}
+					target="_blank"
+					rel="noreferrer"
+				>
+					<Button size="sm" variant="white">
+						Open raw
+					</Button>
+				</a>
+			)}
 		</div>
 	);
 }

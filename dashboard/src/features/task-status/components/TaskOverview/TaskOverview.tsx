@@ -1,5 +1,5 @@
 import { CalendarDays, Search } from "lucide-react";
-import { Card } from "../../../../shared/design-system";
+import { Button, Card } from "../../../../shared/design-system";
 import type { Artifact, TaskGroup } from "../../../../types";
 import { type artifactTypes, taskArtifactTypes } from "../../taskStatusConfig";
 import { StatusBadge } from "../StatusBadge/StatusBadge";
@@ -49,7 +49,7 @@ function TaskCard(props: {
 
 	return (
 		<Card variant="white" className={styles.taskCard}>
-			<TaskCardHeader task={task} />
+			<TaskCardHeader task={task} onSelectArtifact={onSelectArtifact} />
 			<div className={styles.columns}>
 				{taskArtifactTypes.map((artifactType) => (
 					<TaskArtifactColumn
@@ -64,8 +64,12 @@ function TaskCard(props: {
 	);
 }
 
-function TaskCardHeader(props: { task: TaskGroup }) {
-	const { task } = props;
+function TaskCardHeader(props: {
+	task: TaskGroup;
+	onSelectArtifact: (artifact: Artifact) => void;
+}) {
+	const { task, onSelectArtifact } = props;
+	const summary = task.summary;
 
 	return (
 		<div className={styles.header}>
@@ -81,6 +85,17 @@ function TaskCardHeader(props: { task: TaskGroup }) {
 					<p className={styles.description}>{task.description}</p>
 				) : null}
 				<p className={styles.key}>{task.key}</p>
+				{summary && summary !== "unavailable" ? (
+					<Button size="sm" onClick={() => onSelectArtifact(summary)}>
+						Task Summary
+					</Button>
+				) : (
+					<p className={styles.missing}>
+						{summary === "unavailable"
+							? "Summary unavailable"
+							: "No summary yet"}
+					</p>
+				)}
 			</div>
 			{task.updated ? (
 				<div className={styles.updated}>

@@ -5,6 +5,7 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { taskSummaryUsageCommand } from "./task-summary-usage.mjs";
 
 const require = createRequire(import.meta.url);
 const packageRoot = path.resolve(
@@ -65,6 +66,7 @@ const scaffoldOnlyPaths = [
 	"designs/.gitkeep",
 	"research/.gitkeep",
 	"meeting-logs/.gitkeep",
+	"task-summary/.gitkeep",
 	"docs/.gitkeep",
 	"modules/.gitkeep",
 ];
@@ -84,6 +86,8 @@ try {
 		runCheck(resolveRoot(args));
 	} else if (command === "auto") {
 		autoMode(resolveRoot(args), passthroughArgs(args));
+	} else if (command === "summary") {
+		taskSummaryUsageCommand(passthroughArgs(args));
 	} else if (command === "agents") {
 		const agentArgs = passthroughArgs(args);
 		if (agentArgs.length === 1 && agentArgs[0] === "sync") {
@@ -1147,6 +1151,7 @@ function printHelp() {
 	console.log(`Agent Workflows
 
 Usage:
+  workflows summary usage <codex|claude|gemini|antigravity> | totals
   workflows init [--root <path>]
   workflows update [--root <path>]
   workflows dashboard [--root <path>] [-- --vite-arg]

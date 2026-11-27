@@ -73,7 +73,7 @@ instead.
     - Before implementing backend/service work, read and adopt `roles/backend-developer.md`. Modify only files in backend repositories, importing shared contracts from shared repositories.
     - Before implementing frontend work, read and adopt `roles/frontend-developer.md`. Modify only files in frontend repositories, importing shared contracts and using backend APIs.
 13. After implementation in each repository, the main agent must dispatch a Tech Lead and a Security sub-agent using [Repository code review](repository-code-review.md). Apply the review and validation criteria separately to each changed repository. Reassess parallel safety before starting further work.
-14. In manual mode, ask the developer whether to continue after the stage's reviews and validation. In auto mode, continue with any independent ready work. A repository must clear both reviews and its validation before dependent work advances. Report any outstanding gate.
+14. Update the [Task Summary](../../../templates/task-summary-workflow.md) after each implementation, reviewer, and validation result. In manual mode, ask the developer whether to continue after the stage's reviews and validation. In auto mode, continue with any independent ready work. A repository must clear both reviews and its validation before dependent work advances. Report any outstanding gate.
 15. If the next stage depends on newly changed local packages or APIs, ask the
     developer whether to use local or published dependencies in manual mode. In
     auto mode, use validated local code when available; ask only if the choice

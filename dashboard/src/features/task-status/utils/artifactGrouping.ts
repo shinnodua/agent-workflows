@@ -5,6 +5,7 @@ import type {
 	DocumentModuleFilter,
 	DocumentModuleTab,
 	TaskGroup,
+	TaskSummaries,
 } from "../../../types";
 import { artifactTypes, statusRank } from "../taskStatusConfig";
 import { normalizeStatus } from "./status";
@@ -25,11 +26,23 @@ export function filterArtifacts(artifacts: Artifact[], query: string) {
 	);
 }
 
-export function buildTaskGroups(filteredArtifacts: Artifact[]) {
-	const groups = groupRelatedTaskArtifacts(filteredArtifacts);
+export function buildTaskGroups(
+	artifacts: Artifact[],
+	summaries: TaskSummaries = {},
+	visibleArtifacts = artifacts,
+) {
+	const groups = groupRelatedTaskArtifacts(artifacts, summaries);
+	const visible = new Set(
+		visibleArtifacts.map(({ relativePath }) => relativePath),
+	);
 
 	return Array.from(groups.entries())
-		.map(([key, groupArtifacts]) => buildTaskGroup(key, groupArtifacts))
+		.filter(([, { artifacts }]) =>
+			artifacts.some(({ relativePath }) => visible.has(relativePath)),
+		)
+		.map(([key, { artifacts, summary }]) =>
+			buildTaskGroup(key, artifacts, summary),
+		)
 		.sort(sortTaskGroups);
 }
 
@@ -124,13 +137,31 @@ function getArtifactSearchValues(artifact: Artifact) {
 	].filter((value): value is string => Boolean(value));
 }
 
-function groupRelatedTaskArtifacts(artifacts: Artifact[]) {
+function groupRelatedTaskArtifacts(
+	artifacts: Artifact[],
+	summaries: TaskSummaries,
+) {
 	const taskArtifacts = artifacts.filter(
 		(artifact) => artifact.type !== "document",
 	);
 	const unionFind = new UnionFind(taskArtifacts.length);
 	const indexesByTaskKey = new Map<string, number[]>();
 	const indexById = new Map<string, number>();
+	const indexByPrd = new Map<string, number>();
+	const prdByRoot = new Map<number, string>();
+
+	function join(first: number, second: number) {
+		const firstRoot = unionFind.find(first);
+		const secondRoot = unionFind.find(second);
+		const firstPrd = prdByRoot.get(firstRoot);
+		const secondPrd = prdByRoot.get(secondRoot);
+
+		if (firstPrd && secondPrd && firstPrd !== secondPrd) return;
+
+		unionFind.union(firstRoot, secondRoot);
+		const prd = firstPrd ?? secondPrd;
+		if (prd) prdByRoot.set(firstRoot, prd);
+	}
 
 	taskArtifacts.forEach((artifact, index) => {
 		if (artifact.taskKey) {
@@ -141,23 +172,38 @@ function groupRelatedTaskArtifacts(artifacts: Artifact[]) {
 		}
 
 		if (artifact.id) {
-			indexById.set(artifact.id, index);
+			indexById.set(artifact.id.toLowerCase(), index);
+		}
+
+		const prd = getFeatureIdentity(artifact, summaries);
+		if (prd) {
+			prdByRoot.set(index, prd);
+			const existing = indexByPrd.get(prd);
+			if (existing === undefined) indexByPrd.set(prd, index);
+			else join(existing, index);
+		}
+	});
+
+	taskArtifacts.forEach((artifact, index) => {
+		for (const relatedId of getRelatedArtifactIds(artifact)) {
+			const relatedIndex = indexById.get(relatedId.toLowerCase());
+
+			if (relatedIndex !== undefined) {
+				join(index, relatedIndex);
+			}
 		}
 	});
 
 	for (const indexes of indexesByTaskKey.values()) {
-		unionIndexes(unionFind, indexes);
+		const prds = new Set(
+			indexes
+				.map((index) => prdByRoot.get(unionFind.find(index)))
+				.filter(Boolean),
+		);
+		const [first, ...remaining] = indexes;
+		if (first === undefined || prds.size > 1) continue;
+		for (const index of remaining) join(first, index);
 	}
-
-	taskArtifacts.forEach((artifact, index) => {
-		for (const relatedId of getRelatedArtifactIds(artifact)) {
-			const relatedIndex = indexById.get(relatedId);
-
-			if (relatedIndex !== undefined) {
-				unionFind.union(index, relatedIndex);
-			}
-		}
-	});
 
 	const groupsByRoot = new Map<number, Artifact[]>();
 
@@ -166,25 +212,54 @@ function groupRelatedTaskArtifacts(artifacts: Artifact[]) {
 		groupsByRoot.set(root, [...(groupsByRoot.get(root) ?? []), artifact]);
 	});
 
-	const groups = new Map<string, Artifact[]>();
+	const groups = new Map<
+		string,
+		{ artifacts: Artifact[]; summary?: TaskGroup["summary"] }
+	>();
+	const reservedKeys = new Set(prdByRoot.values());
 
-	for (const groupArtifacts of groupsByRoot.values()) {
-		groups.set(getTaskGroupKey(groupArtifacts), groupArtifacts);
+	for (const [root, groupArtifacts] of groupsByRoot) {
+		const featureId = prdByRoot.get(root);
+		const legacyKey = getTaskGroupKey(groupArtifacts);
+		const key =
+			featureId ??
+			(reservedKeys.has(legacyKey) || groups.has(legacyKey)
+				? `${legacyKey}:${groupArtifacts[0]?.relativePath}`
+				: legacyKey);
+		groups.set(key, {
+			artifacts: groupArtifacts,
+			summary:
+				featureId && Object.hasOwn(summaries, featureId)
+					? summaries[featureId]
+					: undefined,
+		});
 	}
 
 	return groups;
 }
 
-function unionIndexes(unionFind: UnionFind, indexes: number[]) {
-	const [firstIndex, ...remainingIndexes] = indexes;
+function getCanonicalPrdId(artifact: Artifact) {
+	const canonical = /^prd-\d{8}-[a-z0-9-]+$/i;
+	const explicit =
+		artifact.type === "prd" ? (artifact.id ?? artifact.prdId) : artifact.prdId;
+	if (explicit && canonical.test(explicit)) return explicit.toLowerCase();
 
-	if (firstIndex === undefined) {
-		return;
+	if (artifact.type === "prd") return;
+	const references = new Set(
+		artifact.relatedArtifactIds
+			.filter((id) => canonical.test(id))
+			.map((id) => id.toLowerCase()),
+	);
+	return references.size === 1 ? references.values().next().value : undefined;
+}
+
+function getFeatureIdentity(artifact: Artifact, summaries: TaskSummaries) {
+	if (artifact.type === "research" && artifact.id) {
+		const provisional = `pending-${artifact.id.toLowerCase()}`;
+		if (Object.hasOwn(summaries, provisional)) return provisional;
 	}
 
-	for (const index of remainingIndexes) {
-		unionFind.union(firstIndex, index);
-	}
+	return getCanonicalPrdId(artifact);
 }
 
 function getRelatedArtifactIds(artifact: Artifact) {
@@ -206,7 +281,11 @@ function getTaskGroupKey(groupArtifacts: Artifact[]) {
 	return preferred?.taskKey || "ungrouped";
 }
 
-function buildTaskGroup(key: string, groupArtifacts: Artifact[]): TaskGroup {
+function buildTaskGroup(
+	key: string,
+	groupArtifacts: Artifact[],
+	summary: TaskGroup["summary"],
+): TaskGroup {
 	return {
 		artifacts: groupArtifacts,
 		byType: buildArtifactsByType(groupArtifacts),
@@ -215,6 +294,7 @@ function buildTaskGroup(key: string, groupArtifacts: Artifact[]): TaskGroup {
 		status: getGroupStatus(groupArtifacts),
 		title: getTaskTitle(groupArtifacts),
 		updated: getLatestArtifactDate(groupArtifacts),
+		summary,
 	};
 }
 

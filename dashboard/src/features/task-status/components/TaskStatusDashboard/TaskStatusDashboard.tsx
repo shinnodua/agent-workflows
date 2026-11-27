@@ -5,7 +5,7 @@ import {
 	hardnessReport as initialHardnessReport,
 	projectProfile as initialProjectProfile,
 } from "virtual:workspace-artifacts";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
 	ActionItem,
 	Artifact,
@@ -14,6 +14,7 @@ import type {
 	DocumentModuleTab,
 	HardnessScanReport,
 	ProjectProfile,
+	TaskSummaries,
 } from "../../../../types";
 import { artifactTypes } from "../../taskStatusConfig";
 import { buildActionItems, filterActionItems } from "../../utils/actionItems";
@@ -42,6 +43,8 @@ type WorkspaceArtifactPayload = {
 	hardnessReport?: HardnessScanReport;
 	projectProfile: ProjectProfile;
 	generatedAt: string;
+	taskSummaries?: TaskSummaries;
+	taskSummaryEvidence?: Artifact[];
 };
 
 export function TaskStatusDashboard() {
@@ -57,11 +60,14 @@ export function TaskStatusDashboard() {
 			generatedAt: initialGeneratedAt,
 		});
 	const [query, setQuery] = useState("");
+	const previewTrigger = useRef<HTMLElement | null>(null);
 	const {
 		artifacts,
 		generatedAt,
 		hardnessReport = initialHardnessReport,
 		projectProfile,
+		taskSummaries,
+		taskSummaryEvidence = [],
 	} = artifactPayload;
 	const activeArtifact = artifactHistory.at(-1) ?? null;
 	const filteredArtifacts = filterArtifacts(artifacts, query);
@@ -72,7 +78,11 @@ export function TaskStatusDashboard() {
 	const markdownMetadataCount = artifacts.filter(
 		(artifact) => artifact.metadataFormat === "markdown",
 	).length;
-	const taskGroups = buildTaskGroups(filteredArtifacts);
+	const taskGroups = buildTaskGroups(
+		artifacts,
+		taskSummaries,
+		filteredArtifacts,
+	);
 	const selectedType = artifactTypes.find((type) => type.type === activeView);
 	const visibleFiles = getVisibleFiles(filteredArtifacts, activeView);
 	const documentModuleTabs = buildDocumentModuleTabs(projectProfile);
@@ -128,6 +138,10 @@ export function TaskStatusDashboard() {
 	}
 
 	function handleSelectArtifact(artifact: Artifact) {
+		previewTrigger.current =
+			document.activeElement instanceof HTMLElement
+				? document.activeElement
+				: null;
 		setArtifactHistory([artifact]);
 	}
 
@@ -149,11 +163,14 @@ export function TaskStatusDashboard() {
 
 	function handleCloseDialog() {
 		setArtifactHistory([]);
+		const trigger = previewTrigger.current;
+		previewTrigger.current = null;
+		window.requestAnimationFrame(() => trigger?.focus());
 	}
 
 	return (
 		<>
-			<main className={styles.layout}>
+			<main className={styles.layout} inert={Boolean(activeArtifact)}>
 				<Sidebar
 					activeView={activeView}
 					filteredArtifacts={filteredArtifacts}
@@ -191,7 +208,7 @@ export function TaskStatusDashboard() {
 			{activeArtifact ? (
 				<MarkdownDialog
 					artifact={activeArtifact}
-					artifacts={artifacts}
+					artifacts={[...artifacts, ...taskSummaryEvidence]}
 					canGoBack={artifactHistory.length > 1}
 					onBack={handleBackArtifact}
 					onClose={handleCloseDialog}

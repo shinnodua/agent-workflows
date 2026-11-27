@@ -812,3 +812,157 @@ test("security discovery, legacy migration, and model resolution stay integrated
 		/^model: inherit$/m,
 	);
 });
+
+test("normalizes task summary usage for each runtime and reconciles revised records", () => {
+	const envelope = {
+		id: "attempt-1",
+		step: "Implementation",
+		asOf: "2026-11-27T00:01:00Z",
+	};
+	function call(args, input) {
+		const result = spawnSync(process.execPath, [cli, "summary", ...args], {
+			encoding: "utf8",
+			input: JSON.stringify(input),
+		});
+		assert.equal(result.status, 0, result.stderr);
+		return JSON.parse(result.stdout);
+	}
+
+	const codex = call(["usage", "codex"], {
+		...envelope,
+		report: {
+			type: "turn.completed",
+			usage: { input_tokens: 100, cached_input_tokens: 20, output_tokens: 10 },
+			text: "Raw prompt omitted from output",
+		},
+	});
+	assert.equal(codex.input, 100);
+	assert.doesNotMatch(JSON.stringify(codex), /Raw prompt/);
+	const snapshot = (inputTokens, outputTokens) => ({
+		method: "thread/tokenUsage/updated",
+		params: {
+			threadId: "native-thread",
+			tokenUsage: {
+				total: {
+					inputTokens,
+					outputTokens,
+					totalTokens: inputTokens + outputTokens,
+				},
+			},
+		},
+	});
+	const threadDelta = call(["usage", "codex"], {
+		...envelope,
+		id: "thread-interval",
+		step: null,
+		before: snapshot(400, 20),
+		report: snapshot(460, 24),
+	});
+	assert.equal(threadDelta.total, 64);
+	assert.equal(
+		call(["totals"], [threadDelta]).records[0].source,
+		"Codex thread counters",
+	);
+	assert.doesNotMatch(JSON.stringify(threadDelta), /native-thread/);
+	const claude = call(["usage", "claude"], {
+		...envelope,
+		report: {
+			type: "result",
+			usage: {
+				input_tokens: 70,
+				cache_read_input_tokens: 20,
+				cache_creation_input_tokens: 10,
+				output_tokens: 10,
+			},
+		},
+	});
+	assert.equal(claude.input, 100);
+
+	const gemini = call(["usage", "gemini"], {
+		...envelope,
+		report: {
+			stats: {
+				models: {
+					gemini: {
+						tokens: {
+							input: 80,
+							prompt: 100,
+							cached: 20,
+							candidates: 7,
+							thoughts: 3,
+							tool: 0,
+							total: 110,
+						},
+					},
+				},
+			},
+		},
+	});
+	assert.equal(gemini.total, 110);
+
+	const antigravity = call(["usage", "antigravity"], {
+		...envelope,
+		step: null,
+		before: {
+			conversation_id: "native-session",
+			status: "SUCCESS",
+			num_turns: 1,
+			usage: { input_tokens: 200, output_tokens: 20, total_tokens: 220 },
+		},
+		report: {
+			event: "result",
+			result: {
+				conversation_id: "native-session",
+				status: "SUCCESS",
+				num_turns: 2,
+				usage: {
+					input_tokens: 300,
+					output_tokens: 30,
+					thinking_tokens: 5,
+					cache_read_tokens: 20,
+					total_tokens: 330,
+				},
+			},
+		},
+	});
+	assert.equal(antigravity.total, 110);
+
+	const unrelated = spawnSync(
+		process.execPath,
+		[cli, "summary", "usage", "antigravity"],
+		{
+			encoding: "utf8",
+			input: JSON.stringify({
+				...envelope,
+				before: { conversation_id: "first", status: "SUCCESS", num_turns: 1 },
+				report: {
+					conversation_id: "second",
+					status: "SUCCESS",
+					num_turns: 2,
+					usage: { input_tokens: 10, output_tokens: 2, total_tokens: 12 },
+				},
+			}),
+		},
+	);
+	assert.equal(unrelated.status, 1);
+	assert.match(unrelated.stderr, /same session/);
+
+	const revised = {
+		...codex,
+		asOf: "2026-11-27T00:02:00Z",
+		input: 110,
+		total: 120,
+	};
+	const result = call(
+		["totals"],
+		[codex, claude, antigravity, codex, gemini, revised],
+	);
+	assert.deepEqual(result.totals, { input: 410, output: 40, total: 450 });
+	assert.equal(result.records.length, 4);
+	assert.equal(
+		result.steps.find(({ step }) => step === "Implementation").total,
+		340,
+	);
+	assert.equal(result.asOf, "2026-11-27T00:02:00.000Z");
+	assert.equal(call(["totals"], []).totals, null);
+});
