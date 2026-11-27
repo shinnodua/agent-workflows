@@ -4,6 +4,7 @@
   "meta": {
     "title": "Workspace delivery workflow",
     "locale": "en",
+    "feedback_links": false,
     "quality_profile": "showcase",
     "output": ".archify/workflow-workspace-delivery-20260929-093455/workspace-delivery.html"
   },
@@ -27,6 +28,14 @@
     {
       "id": "delivery",
       "label": "Independent role work"
+    },
+    {
+      "id": "reviewers",
+      "label": "Tech Lead + Security"
+    },
+    {
+      "id": "coordinator",
+      "label": "Main agent"
     }
   ],
   "phases": [
@@ -44,7 +53,7 @@
     },
     {
       "id": "implementation",
-      "label": "Implementation",
+      "label": "Implementation + review",
       "fromCol": 5,
       "toCol": 5
     }
@@ -101,7 +110,7 @@
       "col": 1,
       "type": "messagebus",
       "label": "Auto mode",
-      "sublabel": "research → validation",
+      "sublabel": "research to handoff",
       "width": 150
     },
     {
@@ -145,9 +154,9 @@
       "lane": "delivery",
       "col": 5,
       "type": "backend",
-      "label": "Implement + validate",
+      "label": "Implement each repo",
       "sublabel": "shared → API → frontend",
-      "width": 136
+      "width": 156
     },
     {
       "id": "securityRequest",
@@ -184,6 +193,24 @@
       "label": "Findings + actions",
       "sublabel": "evidence + mitigations",
       "width": 144
+    },
+    {
+      "id": "repoReview",
+      "lane": "reviewers",
+      "col": 5,
+      "type": "security",
+      "label": "Review each repo",
+      "sublabel": "Tech Lead + Security",
+      "width": 158
+    },
+    {
+      "id": "repoReady",
+      "lane": "coordinator",
+      "col": 5,
+      "type": "messagebus",
+      "label": "Validate and advance",
+      "sublabel": "both reviews clear",
+      "width": 172
     }
   ],
   "edges": [
@@ -284,6 +311,18 @@
       "id": "security-review-findings",
       "from": "securityReview",
       "to": "securityFindings"
+    },
+    {
+      "id": "delivery-review",
+      "from": "delivery",
+      "to": "repoReview",
+      "label": "task diff"
+    },
+    {
+      "id": "review-ready",
+      "from": "repoReview",
+      "to": "repoReady",
+      "label": "clear"
     }
   ],
   "cards": [
@@ -301,8 +340,8 @@
       "title": "Auto mode",
       "items": [
         "Developer starts a feature; workspace metadata enables the automatic path.",
-        "Research → PRD → design → sprint meeting → approvals → plans → implementation and validation.",
-        "Only human-only decisions pause the flow; failed validation blocks completion."
+        "Research → PRD → design → sprint meeting → approvals → plans → implementation → code review → validation.",
+        "A missing review or failed validation holds dependent work. The coordinator continues independent ready work."
       ]
     },
     {
@@ -321,14 +360,20 @@
       "items": [
         "Implement affected shared/core and backend work before dependent frontends.",
         "Reassess safe frontend parallelism after each validated stage.",
-        "Read each submodule agent guide and relevant local skills before editing."
+        "Read each submodule agent guide and relevant local skills before editing.",
+        "The main agent dispatches independent Tech Lead and Security reviewers for each changed repository.",
+        "Tech Lead checks maintainability, standards, and design. Security checks applicable controls and trust boundaries.",
+        "The implementer fixes blocking findings. Both roles review the revised diff before required validation clears the repository."
       ]
     },
     {
       "dot": "emerald",
       "title": "Completion",
       "items": [
+        "After each workflow step, the main agent updates one versioned Markdown file per feature in task-summary/.",
+        "Task Summary records step outcomes, retry history, and verified token usage. Open the saved report from the dashboard or final chat.",
         "Each coding agent reports verified build, runtime, migration, and compatibility facts.",
+        "Report Tech Lead, Security, and validation outcomes by repository, with owners for outstanding findings.",
         "Coordinator gives ordered developer Build, Run, and Roll out actions with breaking changes and validation limits.",
         "Report changed submodules and pointer status; mark unchecked external settings Unknown with an owner.",
         "The developer owns commits."
@@ -338,8 +383,8 @@
       "dot": "cyan",
       "title": "Workflow specification",
       "items": [
-        "Reflects the local workflow specification, including uncommitted Security additions; not a pinned repository snapshot.",
-        "Sources: workflows.md, roles/security.md, .agents/skills/security-review/SKILL.md, and .agents/skills/sprint-meeting/SKILL.md."
+        "Reflects the local workspace workflow specification.",
+        "Sources: workflows.md, templates/task-summary-workflow.md, roles/tech-lead.md, roles/security.md, and .agents/skills/approve-plan/repository-code-review.md."
       ]
     }
   ],
@@ -349,7 +394,7 @@
       "securityRequest"
     ],
     "allowedTerminals": [
-      "delivery",
+      "repoReady",
       "securityFindings"
     ],
     "requiredPaths": [
@@ -359,7 +404,7 @@
       },
       {
         "from": "request",
-        "to": "delivery"
+        "to": "repoReady"
       }
     ],
     "requiredEdges": [
@@ -370,6 +415,14 @@
       {
         "from": "meeting",
         "to": "approvePrd"
+      },
+      {
+        "from": "delivery",
+        "to": "repoReview"
+      },
+      {
+        "from": "repoReview",
+        "to": "repoReady"
       }
     ]
   },

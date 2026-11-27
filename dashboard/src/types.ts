@@ -59,7 +59,10 @@ export type Artifact = {
 	metadataWarnings?: string[];
 	metadataErrors?: string[];
 	owner?: string;
+	isTaskSummary?: boolean;
 };
+
+export type TaskSummaries = Record<string, Artifact | "unavailable">;
 
 export type TaskGroup = {
 	key: string;
@@ -69,6 +72,7 @@ export type TaskGroup = {
 	status: string;
 	description?: string;
 	updated?: string;
+	summary?: Artifact | "unavailable";
 };
 
 export type HardnessCategory =

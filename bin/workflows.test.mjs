@@ -5,6 +5,11 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import {
+	readCodexSnapshot,
+	verifyCodexChildSnapshots,
+} from "./codex-usage-snapshot.mjs";
+import { taskSummaryCheckpointCommand } from "./task-summary-checkpoints.mjs";
 
 const cli = fileURLToPath(new URL("./workflows.js", import.meta.url));
 
@@ -419,6 +424,10 @@ test("workflow steps override role models with source attribution", (context) =>
 			"tech-lead": { antigravity: "flash", claude: "planning-claude" },
 		},
 		coding: { "tech-lead": { antigravity: "pro" } },
+		"code-review": {
+			default: { antigravity: "flash" },
+			security: { antigravity: "pro" },
+		},
 		validation: { "tech-lead": { antigravity: "inherit" } },
 	};
 	fs.writeFileSync(configPath, JSON.stringify(config));
@@ -448,6 +457,17 @@ test("workflow steps override role models with source attribution", (context) =>
 		"planning-claude",
 	);
 	assert.equal(resolve("coding", "tech-lead", "antigravity").model, "pro");
+	assert.deepEqual(resolve("code-review", "security", "antigravity"), {
+		step: "code-review",
+		role: "security",
+		format: "antigravity",
+		model: "pro",
+		source: "workflowModels.code-review.security",
+	});
+	assert.equal(
+		resolve("code-review", "tech-lead", "antigravity").model,
+		"flash",
+	);
 	assert.equal(
 		resolve("planning", "frontend-developer", "antigravity").model,
 		"pro",
@@ -796,4 +816,362 @@ test("security discovery, legacy migration, and model resolution stay integrated
 		),
 		/^model: inherit$/m,
 	);
+});
+
+test("normalizes task summary usage for each runtime and reconciles revised records", () => {
+	const envelope = {
+		id: "attempt-1",
+		step: "Implementation",
+		asOf: "2026-11-27T00:01:00Z",
+	};
+	function call(args, input) {
+		const result = spawnSync(process.execPath, [cli, "summary", ...args], {
+			encoding: "utf8",
+			input: JSON.stringify(input),
+		});
+		assert.equal(result.status, 0, result.stderr);
+		return JSON.parse(result.stdout);
+	}
+
+	const codex = call(["usage", "codex"], {
+		...envelope,
+		report: {
+			type: "turn.completed",
+			usage: { input_tokens: 100, cached_input_tokens: 20, output_tokens: 10 },
+			text: "Raw prompt omitted from output",
+		},
+	});
+	assert.equal(codex.input, 100);
+	assert.doesNotMatch(JSON.stringify(codex), /Raw prompt/);
+	const snapshot = (inputTokens, outputTokens) => ({
+		method: "thread/tokenUsage/updated",
+		params: {
+			threadId: "native-thread",
+			tokenUsage: {
+				total: {
+					inputTokens,
+					outputTokens,
+					totalTokens: inputTokens + outputTokens,
+				},
+			},
+		},
+	});
+	const threadDelta = call(["usage", "codex"], {
+		...envelope,
+		id: "thread-interval",
+		step: null,
+		before: snapshot(400, 20),
+		report: snapshot(460, 24),
+	});
+	assert.equal(threadDelta.total, 64);
+	assert.equal(
+		call(["totals"], [threadDelta]).records[0].source,
+		"Codex thread counters",
+	);
+	assert.doesNotMatch(JSON.stringify(threadDelta), /native-thread/);
+	const claude = call(["usage", "claude"], {
+		...envelope,
+		report: {
+			type: "result",
+			usage: {
+				input_tokens: 70,
+				cache_read_input_tokens: 20,
+				cache_creation_input_tokens: 10,
+				output_tokens: 10,
+			},
+		},
+	});
+	assert.equal(claude.input, 100);
+
+	const gemini = call(["usage", "gemini"], {
+		...envelope,
+		report: {
+			stats: {
+				models: {
+					gemini: {
+						tokens: {
+							input: 80,
+							prompt: 100,
+							cached: 20,
+							candidates: 7,
+							thoughts: 3,
+							tool: 0,
+							total: 110,
+						},
+					},
+				},
+			},
+		},
+	});
+	assert.equal(gemini.total, 110);
+
+	const antigravity = call(["usage", "antigravity"], {
+		...envelope,
+		step: null,
+		before: {
+			conversation_id: "native-session",
+			status: "SUCCESS",
+			num_turns: 1,
+			usage: { input_tokens: 200, output_tokens: 20, total_tokens: 220 },
+		},
+		report: {
+			event: "result",
+			result: {
+				conversation_id: "native-session",
+				status: "SUCCESS",
+				num_turns: 2,
+				usage: {
+					input_tokens: 300,
+					output_tokens: 30,
+					thinking_tokens: 5,
+					cache_read_tokens: 20,
+					total_tokens: 330,
+				},
+			},
+		},
+	});
+	assert.equal(antigravity.total, 110);
+
+	const unrelated = spawnSync(
+		process.execPath,
+		[cli, "summary", "usage", "antigravity"],
+		{
+			encoding: "utf8",
+			input: JSON.stringify({
+				...envelope,
+				before: { conversation_id: "first", status: "SUCCESS", num_turns: 1 },
+				report: {
+					conversation_id: "second",
+					status: "SUCCESS",
+					num_turns: 2,
+					usage: { input_tokens: 10, output_tokens: 2, total_tokens: 12 },
+				},
+			}),
+		},
+	);
+	assert.equal(unrelated.status, 1);
+	assert.match(unrelated.stderr, /same session/);
+
+	const revised = {
+		...codex,
+		asOf: "2026-11-27T00:02:00Z",
+		input: 110,
+		total: 120,
+	};
+	const result = call(
+		["totals"],
+		[codex, claude, antigravity, codex, gemini, revised],
+	);
+	assert.deepEqual(result.totals, { input: 410, output: 40, total: 450 });
+	assert.equal(result.records.length, 4);
+	assert.equal(
+		result.steps.find(({ step }) => step === "Implementation").total,
+		340,
+	);
+	assert.equal(result.asOf, "2026-11-27T00:02:00.000Z");
+	assert.equal(call(["totals"], []).totals, null);
+	const legacy = Object.fromEntries(
+		Object.entries(antigravity).filter(([key]) => key !== "cacheRead"),
+	);
+	const enriched = call(["totals"], [legacy, antigravity, legacy]);
+	assert.equal(enriched.records.length, 1);
+	assert.equal(enriched.records[0].cacheRead, 20);
+	assert.equal(enriched.totals.total, 110);
+});
+
+test("checkpoints persist consecutive steps, replay exactly, and preserve unknown measurements", (context) => {
+	const root = fs.mkdtempSync(
+		path.join(os.tmpdir(), "task-summary-checkpoint-"),
+	);
+	context.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const directory = path.join(root, "task-summary");
+	fs.mkdirSync(directory);
+	const feature = "prd-20261127-checkpoint-fixture";
+	const target = path.join(directory, `${feature}.md`);
+	const template = fs.readFileSync(
+		new URL("../templates/task-summary-template.md", import.meta.url),
+		"utf8",
+	);
+	function sample(second, input, output) {
+		return {
+			threadAlias: "a".repeat(64),
+			asOf: `2026-11-27T00:00:${second}.000Z`,
+			total: {
+				inputTokens: input,
+				outputTokens: output,
+				totalTokens: input + output,
+			},
+		};
+	}
+
+	const observations = [
+		sample("01", 20, 5),
+		sample("02", 60, 10),
+		sample("03", 100, 20),
+		null,
+		sample("05", 110, 30),
+	];
+	const runCheckpoint = (...args) =>
+		taskSummaryCheckpointCommand(
+			root,
+			["checkpoint", args[0], feature, ...args.slice(1)],
+			() => observations.shift(),
+		);
+
+	assert.deepEqual(runCheckpoint("start", "Research", "attempt-1"), {
+		status: "started",
+		available: true,
+	});
+	assert.throws(
+		() => runCheckpoint("start", "Design", "attempt-2"),
+		/Finish the active step/,
+	);
+	// Sealed next can be retried after creating the summary without reading a later cutoff.
+	assert.throws(
+		() => runCheckpoint("next", "Research", "attempt-1", "Design", "attempt-2"),
+		{ code: "ENOENT" },
+	);
+	fs.writeFileSync(target, template, { mode: 0o644 });
+	const research = runCheckpoint(
+		"next",
+		"Research",
+		"attempt-1",
+		"Design",
+		"attempt-2",
+	);
+	const design = runCheckpoint("finish", "Design", "attempt-2");
+	assert.deepEqual(runCheckpoint("finish", "Design", "attempt-2"), design);
+	assert.equal(research.receipt.total, 45);
+	assert.equal(design.receipt.total, 50);
+	assert.equal(research.receipt.asOf, "2026-11-27T00:00:02.000Z");
+
+	runCheckpoint("start", "Validation", "attempt-3");
+	assert.equal(
+		runCheckpoint("finish", "Validation", "attempt-3").status,
+		"unavailable",
+	);
+	const contents = fs.readFileSync(target, "utf8");
+	assert.match(contents, /80 input, 15 output, 95 total/);
+	assert.match(contents, /\| Validation \| Unavailable \|/);
+	assert.equal(contents.match(/\| Design \|/g).length, 1);
+	assert.match(contents, /## Final handoff/);
+	assert.equal(fs.statSync(target).mode & 0o777, 0o644);
+
+	const native = spawnSync(
+		process.execPath,
+		[cli, "summary", "record", feature, "claude", "complete", "--root", root],
+		{
+			encoding: "utf8",
+			input: JSON.stringify({
+				id: "later-receipt",
+				step: "Validation",
+				asOf: "2026-11-27T00:00:06Z",
+				report: {
+					type: "result",
+					usage: { input_tokens: 10, output_tokens: 2 },
+				},
+			}),
+		},
+	);
+	assert.equal(native.status, 0, native.stderr);
+	assert.match(
+		fs.readFileSync(target, "utf8"),
+		/\| Validation \|[^\n]*\| Partial\. .*Earlier coverage gaps remain/,
+	);
+	taskSummaryCheckpointCommand(root, [
+		"reconcile",
+		feature,
+		"Validation",
+		"complete",
+	]);
+	assert.match(
+		fs.readFileSync(target, "utf8"),
+		/\| Validation \|[^\n]*\| Complete\./,
+	);
+});
+
+test("Codex snapshots bind matching rollout metadata and omit raw identities", (context) => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "task-summary-rollout-"));
+	context.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const dated = path.join(root, "2026/11/27");
+	fs.mkdirSync(dated, { recursive: true });
+	const parent = "00000000-0000-0000-0000-000000000001";
+	const child = "00000000-0000-0000-0000-000000000002";
+	const file = path.join(dated, `rollout-2026-11-27T00-00-00-${child}.jsonl`);
+	const events = [
+		{
+			type: "session_meta",
+			payload: {
+				id: child,
+				source: { subagent: { thread_spawn: { parent_thread_id: parent } } },
+			},
+		},
+		{ type: "event_msg", payload: { type: "task_started" } },
+		{
+			type: "event_msg",
+			timestamp: "2026-11-27T00:00:01Z",
+			payload: {
+				type: "token_count",
+				info: {
+					total_token_usage: {
+						input_tokens: 100,
+						output_tokens: 5,
+						total_tokens: 105,
+					},
+				},
+			},
+		},
+	];
+	fs.writeFileSync(
+		file,
+		`${events.map((event) => JSON.stringify(event)).join("\n")}\n`,
+	);
+	const snapshot = readCodexSnapshot(root, child);
+	assert.deepEqual(snapshot.total, {
+		inputTokens: 100,
+		outputTokens: 5,
+		totalTokens: 105,
+	});
+	assert.notEqual(snapshot.threadAlias, snapshot.parentAlias);
+	assert.doesNotMatch(
+		JSON.stringify(snapshot),
+		new RegExp(`${parent}|${child}`),
+	);
+	assert.equal(readCodexSnapshot(root, parent), null);
+	const second = structuredClone(events[2]);
+	second.timestamp = "2026-11-27T00:00:02Z";
+	second.payload.info.total_token_usage = {
+		input_tokens: 120,
+		output_tokens: 10,
+		total_tokens: 130,
+	};
+	fs.appendFileSync(file, `${JSON.stringify(second)}\n`);
+	const later = readCodexSnapshot(root, child);
+	assert.equal(
+		verifyCodexChildSnapshots(snapshot.parentAlias, snapshot, later, root),
+		true,
+	);
+	assert.equal(
+		verifyCodexChildSnapshots("0".repeat(64), snapshot, later, root),
+		false,
+	);
+	assert.equal(
+		verifyCodexChildSnapshots(
+			snapshot.parentAlias,
+			snapshot,
+			{
+				...later,
+				total: { inputTokens: 300, outputTokens: 100, totalTokens: 400 },
+			},
+			root,
+		),
+		false,
+	);
+
+	const duplicate = path.join(
+		dated,
+		`rollout-2026-11-27T01-00-00-${child}.jsonl`,
+	);
+	fs.copyFileSync(file, duplicate);
+	assert.equal(readCodexSnapshot(root, child), null);
 });

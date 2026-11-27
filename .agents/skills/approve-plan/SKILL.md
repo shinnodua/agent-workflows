@@ -51,30 +51,29 @@ instead.
    - `Approval command`: `$approve-plan <plan-id>`
    - In auto mode, record `Approved by: auto-mode (developer-enabled)` and
      `Approval command: $auto-mode on`.
-9. Implement in dependency-safe stages according to `project/workflows.json`. Before each stage, assess the remaining affected repositories/platforms and decide which can run in parallel.
-   Re-run this assessment every time a stage completes, because newly implemented contracts, APIs, generated outputs, or migrations may unblock later parallel work. For example, implement shared/core contracts first when other platforms depend on them; after shared validation passes, reassess whether frontend platforms can run in parallel.
+9. Implement in dependency-safe stages according to `project/workflows.json`. Place [Task Summary checkpoints](../../../templates/task-summary-workflow.md#capture-usage-at-step-boundaries) around implementation, review, and validation as separate steps. Before each stage, assess the remaining affected repositories/platforms and decide which can run in parallel.
+   Before any implementation edits, read [Repository code review](repository-code-review.md) and capture the baseline for each assigned repository, including any root-owned work. For a root-only plan, run one root stage using `AGENTS.md` and the root checks in `project/validation.json`. Reassess stage readiness after review and validation because the finished contracts, APIs, generated outputs, or migrations may unblock later work.
 10. Parallel implementation for a stage is allowed only when every platform in that stage can be implemented against stable contracts and disjoint file ownership without requiring another platform's unimplemented local changes. Treat a platform as not ready for the current parallel stage when:
     - It depends on new or changed shared contracts from repositories tagged as `shared` or `core` that are not already implemented and available locally.
     - It depends on API behavior, generated types, migrations, assets, or package outputs that another repository must implement first.
     - Two platforms need to edit the same files, shared package metadata, workspace configuration, deployment configuration, or generated artifacts.
     - The root or submodule plans define an explicit sequence, blocker, rollout order, or validation dependency.
 11. When two or more remaining platforms are ready for the same parallel-safe stage, spawn one sub-agent per ready platform to implement them in parallel:
-    Resolve each assigned role's `coding` model with `workflows agents resolve coding <role> --format <agents|claude> --json` before spawning; use a non-`inherit` model when supported and report an unapplied override.
+    Resolve each assigned role's `coding` model with `workflows agents resolve coding <role> --format <codex|antigravity|claude> --json` before spawning; use a non-`inherit` model when supported and report an unapplied override.
     - Give each sub-agent the approved root plan path, root plan ID, PRD path, linked research inputs, its submodule plan path, responsibility summary, exact allowed file scope, validation commands from `project/repositories.json`, and relevant dependency assumptions.
     - Instruct each sub-agent to read and follow the local agent setup file defined by `agentGuide` in `project/repositories.json` for its assigned repository before editing. Also require it to discover local `SKILL.md` files under the assigned repository's `.agents/skills/` and `.codex/skills/`, read every skill relevant to its assigned work or named by the developer or agent guide, and apply those instructions before editing. Reading the agent guide alone does not satisfy this step.
     - Instruct each sub-agent to adopt the role required for its platform work (e.g. `roles/backend-developer.md` for API/backend service work, `roles/frontend-developer.md` for frontend work).
     - Instruct dependent sub-agents to import and use shared contracts from the designated shared/core repositories; do not redefine shared contracts outside the core/shared implementation.
-    - Instruct every sub-agent to edit only its assigned files, preserve user changes, run the validation commands owned by its repository from `project/repositories.json`, and not commit changes.
+    - Instruct every sub-agent to edit only its assigned files, preserve user changes, follow the validation rules in [Repository code review](repository-code-review.md), and not commit changes.
     - In auto mode, instruct each implementation sub-agent to return applicable verified facts from `templates/auto-mode-completion-summary-template.md`, including developer setup actions, breaking changes, and validation limits. The coordinator publishes the consolidated final summary.
-    - After sub-agents finish, review their changes and validation results together. Reconcile any integration conflicts, then re-run the parallel-safety assessment for the remaining work before continuing.
+    - Collect the task-owned file list and validation evidence after sub-agents finish. Reconcile integration conflicts before dispatching repository code review.
 12. When only one platform is ready for the current stage, or the remaining work is not parallel-safe yet, implement the next unblocked platform following the stage sequence configured in `project/workflows.json`:
     - Before editing in that repository, read its configured `agentGuide`; discover local `SKILL.md` files under `.agents/skills/` and `.codex/skills/`; then read and apply every skill relevant to the work or named by the developer or agent guide. If no local skill applies, continue under the agent guide and approved plan.
     - Before implementing shared/core work, ensure shared contracts and types are implemented and validated first.
     - Before implementing backend/service work, read and adopt `roles/backend-developer.md`. Modify only files in backend repositories, importing shared contracts from shared repositories.
     - Before implementing frontend work, read and adopt `roles/frontend-developer.md`. Modify only files in frontend repositories, importing shared contracts and using backend APIs.
-13. After each serial platform stage or parallel sub-agent stage finishes, validate the changed repositories using their `validation` commands from `project/repositories.json`, then decide whether any remaining platforms are now parallel-safe. If so, continue with a parallel stage. If not, continue with the next unblocked serial platform.
-14. After finishing one stage, ask the developer whether to continue in manual
-    mode. In auto mode, continue to the next ready stage after validation passes.
+13. After implementation in each repository, the main agent must dispatch a Tech Lead and a Security sub-agent using [Repository code review](repository-code-review.md). Apply the review and validation criteria separately to each changed repository. Reassess parallel safety before starting further work.
+14. Update the [Task Summary](../../../templates/task-summary-workflow.md) after each implementation, reviewer, and validation result. In manual mode, ask the developer whether to continue after the stage's reviews and validation. In auto mode, continue with any independent ready work. A repository must clear both reviews and its validation before dependent work advances. Report any outstanding gate.
 15. If the next stage depends on newly changed local packages or APIs, ask the
     developer whether to use local or published dependencies in manual mode. In
     auto mode, use validated local code when available; ask only if the choice
@@ -83,4 +82,4 @@ instead.
 
 ## Output
 
-Report the approved plan path, the current implementation stage, whether that stage is parallel-safe, the sub-agents spawned or next serial implementation platform, and any dependency choice the developer must make before continuing.
+Report the approved plan path, current stage, and what can run in parallel. For each changed repository, report Tech Lead, Security, and validation outcomes, including the impact and owner of outstanding work. Include any dependency decision the developer must make.

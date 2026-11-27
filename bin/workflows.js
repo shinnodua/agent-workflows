@@ -5,6 +5,8 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { taskSummaryCheckpointCommand } from "./task-summary-checkpoints.mjs";
+import { taskSummaryUsageCommand } from "./task-summary-usage.mjs";
 
 const require = createRequire(import.meta.url);
 const packageRoot = path.resolve(
@@ -34,6 +36,7 @@ const workflowSteps = [
 	"meeting",
 	"planning",
 	"coding",
+	"code-review",
 	"validation",
 ];
 
@@ -64,6 +67,7 @@ const scaffoldOnlyPaths = [
 	"designs/.gitkeep",
 	"research/.gitkeep",
 	"meeting-logs/.gitkeep",
+	"task-summary/.gitkeep",
 	"docs/.gitkeep",
 	"modules/.gitkeep",
 ];
@@ -83,6 +87,19 @@ try {
 		runCheck(resolveRoot(args));
 	} else if (command === "auto") {
 		autoMode(resolveRoot(args), passthroughArgs(args));
+	} else if (command === "summary") {
+		const summaryArgs = passthroughArgs(args);
+		if (["usage", "totals"].includes(summaryArgs[0])) {
+			taskSummaryUsageCommand(summaryArgs);
+		} else {
+			console.log(
+				JSON.stringify(
+					taskSummaryCheckpointCommand(resolveRoot(args), summaryArgs),
+					null,
+					2,
+				),
+			);
+		}
 	} else if (command === "agents") {
 		const agentArgs = passthroughArgs(args);
 		if (agentArgs.length === 1 && agentArgs[0] === "sync") {
@@ -1146,6 +1163,13 @@ function printHelp() {
 	console.log(`Agent Workflows
 
 Usage:
+  workflows summary usage <codex|claude|gemini|antigravity> | totals
+  workflows summary checkpoint start|finish <feature> <step> <attempt> [--root <path>]
+  workflows summary checkpoint next <feature> <step> <attempt> <next-step> <next-attempt> [--root <path>]
+  workflows summary snapshot
+  workflows summary record <feature> <runtime> <complete|partial> [--root <path>]
+  workflows summary reconcile <feature> <step> <complete|partial> [--root <path>]
+  workflows summary record-child <feature> <step> <attempt> <excluded|included|unknown> [--root <path>]
   workflows init [--root <path>]
   workflows update [--root <path>]
   workflows dashboard [--root <path>] [-- --vite-arg]

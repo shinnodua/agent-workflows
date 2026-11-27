@@ -48,6 +48,7 @@
 		"research/.gitkeep",
 		"roles",
 		"scripts",
+		"task-summary/.gitkeep",
 		"templates",
 		"workflows.md",
 		"workspace.config.json",

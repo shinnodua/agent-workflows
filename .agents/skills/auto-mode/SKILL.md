@@ -1,8 +1,8 @@
 ---
 name: auto-mode
 description: >-
-  Toggle or inspect workspace auto mode, and run the ordered research-to-validation
-  feature workflow when auto mode is enabled for a developer-initiated task.
+  Toggle or inspect workspace auto mode, and run the ordered feature
+  workflow when auto mode is enabled for a developer-initiated task.
 ---
 
 # auto-mode
@@ -34,7 +34,9 @@ authorizes intermediate PRD and plan approvals and stage continuation; it does
 not authorize commits, pushes, publishing, deployment, production changes, or
 work outside the requested feature.
 
-Advance through these stages in order, reusing verified artifacts if resuming:
+Run the [Task Summary checkpoints](../../../templates/task-summary-workflow.md#capture-usage-at-step-boundaries) before and after each stage. Give each delegated run the parent step and its own attempt ID. Reuse verified artifacts when resuming.
+
+Advance through these stages in order:
 
 1. **Research:** Follow `research/SKILL.md` and save a research brief linked to
    the request. Continue after the brief is complete.
@@ -60,13 +62,15 @@ Advance through these stages in order, reusing verified artifacts if resuming:
 7. **Approve plan:** Follow `approve-plan/SKILL.md`. Resolve agent-answerable
    planning issues, mark the root plan `approved`, and record the same auto-mode
    approval authority.
-8. **Implement and validate:** Follow the approved plan and configured
-   dependency-safe stages. Continue between stages without a routine developer
-   prompt. Run each owning repository's validation commands and report results.
+8. **Implement, review, and validate:** Use the `approve-plan` skill for every
+   dependency-safe stage, including root-only work. The main agent dispatches
+   Tech Lead and Security review for each changed repository. Follow
+   [Repository code review](../approve-plan/repository-code-review.md) for the
+   review and validation gates. Continue to ready work without a routine prompt.
    Resolve the `coding` model before spawning an implementation role. Resolve
    `validation` only when spawning a separate validation agent; an existing
    coding agent keeps its model while validating its own work.
-9. **Completion handoff:** After coding and validation, use
+9. **Completion handoff:** After coding, review, and validation, use
    `templates/auto-mode-completion-summary-template.md`. Require every serial
    or delegated coding agent to return applicable, verified repository facts
    from that template. Reconcile shared settings, conflicting reports, and
@@ -77,12 +81,16 @@ Advance through these stages in order, reusing verified artifacts if resuming:
    after checking; use `Unknown` with the missing fact and owner otherwise.
    Never include secret values or claim an external build or runtime was tested
    when it was not. Keep the template's artifact status, per-repository
-   implementation, validation, and human-only question sections in the final
+   implementation, review, validation, and human-only question sections in the final
    report alongside the operational handoff.
 
+After each stage and repository outcome, update the active feature’s
+[Task Summary](../../../templates/task-summary-workflow.md) before advancing.
+Include its link in the final chat handoff.
+
 At each stage, show a concise progress update and verify the required artifact
-or validation result before advancing. Resolve questions that agents can answer
-from the PRD, research, design, code, and role knowledge. Ask the developer only
+or required review and validation results before advancing. Resolve questions
+that agents can answer from the PRD, research, design, code, and role knowledge. Ask the developer only
 when product intent, business priority, private data, credentials, an external
 stakeholder choice, or another decision cannot responsibly be inferred. State
 which stage is blocked, wait for the answer, record it, and resume. Continue
@@ -98,7 +106,7 @@ return to manual approval and stage gates before the next stage.
 For a toggle, report the effective state and `workspace.config.json` path. For a completed
 coding feature, follow `templates/auto-mode-completion-summary-template.md`
 and include research, PRD, design or non-applicability, meeting log, plans,
-changed repositories, validation, developer setup actions, breaking changes,
+changed repositories, review, validation, developer setup actions, breaking changes,
 and any unresolved human-only question. For a documentation-only feature, use
 the same headings and mark irrelevant build or runtime actions `None` after
 checking.

@@ -146,7 +146,13 @@ the default `inherit` role entries and empty planning/coding sections without
 replacing existing settings.
 For a step-specific model, add `workflowModels.<step>.<role>` or
 `workflowModels.<step>.default` to the same file. The supported steps are
-`research`, `prd`, `design`, `meeting`, `planning`, `coding`, and `validation`.
+`research`, `prd`, `design`, `meeting`, `planning`, `coding`,
+`code-review`, and `validation`.
+
+Use `workflowModels.code-review.tech-lead` and
+`workflowModels.code-review.security` to select review models. Put any
+repository-specific review steps in its configured `agentGuide` or a document
+it links. Both roles run for each repository changed by the implementation.
 Use `bunx workflows agents resolve planning tech-lead --format antigravity --json`
 to inspect the selected model and its config source. Step overrides affect
 newly spawned workflow agents; static role files retain the base model.

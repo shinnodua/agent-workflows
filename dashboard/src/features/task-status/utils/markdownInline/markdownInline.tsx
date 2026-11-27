@@ -90,6 +90,16 @@ function renderLinkToken(
 		);
 	}
 
+	if (
+		context.currentArtifact.sourceHref === "" &&
+		!/^https?:\/\//i.test(href)
+	) {
+		if (href.startsWith("../") && !/[\\?#]/.test(href)) {
+			return `${linkMatch?.[1] ?? token} (${href})`;
+		}
+		return linkMatch?.[1] ?? token;
+	}
+
 	return (
 		<a
 			className={styles.link}

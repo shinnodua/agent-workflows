@@ -17,6 +17,8 @@ Before reviewing, read and adopt `roles/security.md` as the authoritative review
 contract. Read `AGENTS.md`, `workflows.md`, `project/PROJECT.md`, and
 `project/repositories.json` for domain, ownership, and workspace rules.
 
+For post-implementation repository review, use the coordinator's review packet
+and the Code Review section of `roles/security.md`.
 For direct review requests, follow `.agents/skills/security-review/SKILL.md`.
 For sprint meetings, follow the chair's target, response format, and time box;
 return a security-informed design contribution as well as security findings.
