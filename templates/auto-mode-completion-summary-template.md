@@ -1,6 +1,6 @@
 # Auto-Mode Implementation Completion Summary
 
-Use this template after implementing and validating code while workspace auto mode is on. Include the complete delivery record: artifacts, per-repository implementation, validation, human-only questions, and the developer's remaining setup and rollout actions. Every coding agent returns applicable, verified facts for its assigned repository. The coordinator reconciles the repository reports and publishes **one** final summary. Keep it concise; link to actual files or plans.
+Use this template after implementing, reviewing, and validating code while workspace auto mode is on. Include the complete delivery record: artifacts, per-repository implementation, review, validation, human-only questions, and the developer's remaining setup and rollout actions. Every coding agent returns applicable, verified facts for its assigned repository. The coordinator reconciles the repository reports and publishes **one** final summary. Keep it concise; link to actual files or plans.
 
 Do not guess external configuration or secret values. Use `None` only after checking that a category has no relevant change. Use `Unknown — <missing fact>; owner: <person/team or service owner>` when a fact cannot be verified. Do not call an unrun build, deployment, or runtime check successful.
 
@@ -63,7 +63,15 @@ Include only affected entries. Say which environment variables must be added to 
 - API and client rollout order: `<service/client sequence; compatibility with deployed app versions and cached web assets; or None/Unknown>`
 - Rollback or downtime considerations: `<verified steps or limitation; or None/Unknown>`
 
-## 6. Validation results
+## 6. Repository review and validation
+
+The coordinator fills one row per changed repository using the final review ID.
+
+| Repository | Review ID | Tech Lead | Security | Outstanding finding, coverage gap, or next action |
+| --- | --- | --- | --- | --- |
+| `<repository>` | `<review ID>` | `<clear / changes requested / incomplete>` | `<clear / changes requested / incomplete>` | `<finding and owner, or None>` |
+
+### Validation results
 
 | Repository | Check or command | Result | What it verifies |
 | --- | --- | --- | --- |

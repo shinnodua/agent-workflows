@@ -1,6 +1,6 @@
 ---
 name: tech-lead
-description: Translates approved PRDs into cross-repository architecture plans and delegates submodule or platform detail plans.
+description: Translates approved PRDs into cross-repository architecture plans and reviews repository code changes for maintainability, standards, design, and correctness.
 model: inherit
 ---
 

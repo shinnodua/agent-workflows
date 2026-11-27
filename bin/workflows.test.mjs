@@ -419,6 +419,10 @@ test("workflow steps override role models with source attribution", (context) =>
 			"tech-lead": { antigravity: "flash", claude: "planning-claude" },
 		},
 		coding: { "tech-lead": { antigravity: "pro" } },
+		"code-review": {
+			default: { antigravity: "flash" },
+			security: { antigravity: "pro" },
+		},
 		validation: { "tech-lead": { antigravity: "inherit" } },
 	};
 	fs.writeFileSync(configPath, JSON.stringify(config));
@@ -448,6 +452,17 @@ test("workflow steps override role models with source attribution", (context) =>
 		"planning-claude",
 	);
 	assert.equal(resolve("coding", "tech-lead", "antigravity").model, "pro");
+	assert.deepEqual(resolve("code-review", "security", "antigravity"), {
+		step: "code-review",
+		role: "security",
+		format: "antigravity",
+		model: "pro",
+		source: "workflowModels.code-review.security",
+	});
+	assert.equal(
+		resolve("code-review", "tech-lead", "antigravity").model,
+		"flash",
+	);
 	assert.equal(
 		resolve("planning", "frontend-developer", "antigravity").model,
 		"pro",

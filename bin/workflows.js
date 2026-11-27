@@ -34,6 +34,7 @@ const workflowSteps = [
 	"meeting",
 	"planning",
 	"coding",
+	"code-review",
 	"validation",
 ];
 

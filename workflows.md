@@ -153,11 +153,11 @@ request and follows `.agents/skills/auto-mode/SKILL.md` when enabled.
 
 With auto mode on, the agent advances through research → PRD → design → sprint
 meeting → PRD approval → `create-plan` (root and affected submodule plans) → plan approval →
-implementation and validation. Design is recorded as not applicable when there
+implementation, code review, and validation. Design is recorded as not applicable when there
 is no user-facing surface. The agent resolves questions it can answer and asks
 the developer only for decisions that require developer intent or information.
-The agent records auto-mode authority in approval metadata. A failed check or
-unanswered human-only question blocks dependent progression. Auto mode does not
+The agent records auto-mode authority in approval metadata. An outstanding
+review, failed check, or unanswered human-only question blocks dependent work. Auto mode does not
 start unsolicited work or authorize commits, pushes, releases, deployment, or
 production changes.
 
@@ -168,7 +168,7 @@ for its repository using
 [`templates/auto-mode-completion-summary-template.md`](templates/auto-mode-completion-summary-template.md).
 The coordinator reconciles these into one final handoff led by the developer's
 required Build, Run, and Roll out actions. It includes build-service and runtime
-settings, breaking changes, migrations, app/web/API setup, validation evidence,
+settings, breaking changes, migrations, app/web/API setup, per-repository review and validation evidence,
 and unresolved facts with an owner. `None` means the category was checked and
 found inapplicable; unknown external state must be reported as `Unknown`.
 
@@ -212,22 +212,18 @@ flowchart LR
 
   subgraph core [Shared/Core Developer]
     coreImpl[Implement shared contracts, design system, or core logic]
-    coreValidate[Validate shared/core repositories]
   end
 
   subgraph service [Backend Developer]
     apiImpl[Implement backend API or service changes]
-    apiValidate[Validate backend repositories]
   end
 
   subgraph web [Frontend Developer]
     webImpl[Implement web frontend changes]
-    webValidate[Validate web frontend repositories]
   end
 
   subgraph app [Frontend Developer]
     appImpl[Implement app frontend changes]
-    appValidate[Validate app frontend repositories]
   end
 
   subgraph security [Security: standalone advisory review]
@@ -238,12 +234,19 @@ flowchart LR
     securityRequest --> securityContext --> securityReview --> securityFindings
   end
 
+  subgraph reviewGates [Main agent dispatches both reviewers per changed repository]
+    coreGate[Shared/core: Tech Lead + Security review and validation]
+    apiGate[Backend: Tech Lead + Security review and validation]
+    webGate[Web: Tech Lead + Security review and validation]
+    appGate[App: Tech Lead + Security review and validation]
+  end
+
   frontendReady((Frontend stage ready))
   frontendDone((Frontend stage complete))
   meetingChoice{Run optional sprint meeting?}
   sprintMeeting[Review PRD and design with all roles including Security]
 
-  finish([Report changed repos, validation, and submodule pointer status])
+  finish([Report per-repo reviews, validation, and submodule pointer status])
 
   autoMode{Auto mode enabled?}
 
@@ -263,11 +266,15 @@ flowchart LR
   rootPlan --> subPlans --> clarifyPlan
   clarifyPlan -->|Yes| updatePlan --> clarifyPlan
   clarifyPlan -->|No| approvePlan
-  approvePlan --> coreImpl --> coreValidate
-  coreValidate --> apiImpl --> apiValidate
-  apiValidate --> frontendReady
-  frontendReady --> webImpl --> webValidate --> frontendDone
-  frontendReady --> appImpl --> appValidate --> frontendDone
+  approvePlan --> coreImpl --> coreGate
+  coreGate -->|Clear| apiImpl --> apiGate
+  apiGate -->|Clear| frontendReady
+  frontendReady --> webImpl --> webGate -->|Clear| frontendDone
+  frontendReady --> appImpl --> appGate -->|Clear| frontendDone
+  coreGate -->|Fix findings and review again| coreImpl
+  apiGate -->|Fix findings and review again| apiImpl
+  webGate -->|Fix findings and review again| webImpl
+  appGate -->|Fix findings and review again| appImpl
   frontendDone --> finish
 ```
 
@@ -293,6 +300,7 @@ flowchart LR
 | Backend/API implementation | Backend Developer | Tech Lead, Core Developer | API/backend changes in repositories tagged as backend or service owners in `project/repositories.json` |
 | Web frontend implementation | Frontend Developer | UI/UX Designer, Backend Developer | Web frontend changes in repositories tagged as web/frontend owners; may run in parallel with app frontend implementation when contracts are ready |
 | App frontend implementation | Frontend Developer | UI/UX Designer, Backend Developer, Core Developer | App frontend changes in repositories tagged as app/frontend owners; may run in parallel with web frontend implementation when contracts are ready |
+| Per-repository code review | Tech Lead and Security sub-agents | Main agent and repository implementer | Separate role outcomes, findings, remediation, and coverage gaps for each changed repository |
 | Validation and handoff report | Implementing role for each repo | Tech Lead | Per-repository facts and one [auto-mode completion summary](templates/auto-mode-completion-summary-template.md) with developer actions, breaking changes, validation results, changed submodules, and root submodule pointer note |
 
 ### PRD Commands
@@ -314,7 +322,7 @@ Codex selection for compatibility.
 Updates add missing default model entries to older workspace config files and
 preserve configured values.
 `workflowModels` can override a role for `research`, `prd`, `design`, `meeting`,
-`planning`, `coding`, or `validation`. Each step may set `default` for all roles
+`planning`, `coding`, `code-review`, or `validation`. Each step may set `default` for all roles
 and then role-specific values. Resolution is step role, step default, base role,
 then runtime default. Run
 `workflows agents resolve <step> <role> --format <codex|antigravity|claude> --json`
@@ -440,7 +448,8 @@ catalog. The legacy format name `agents` remains an alias for `codex`.
     When multiple frontend repositories are ready and do not depend on each
     other's unimplemented local changes, spawn one frontend sub-agent for each
     platform and implement them in parallel.
-  - In auto mode, continue after each validated stage; ask only when a
+  - Run Tech Lead and Security review for each changed repository in either mode.
+  - In auto mode, continue after reviews and validation clear; ask only when a
     developer-only decision blocks progression.
 - `$griling-plan <plan-id-or-path>`, `griling-plan <plan-id-or-path>`, or `/griling-plan <plan-id-or-path>`
   - Alias: `$grilling-plan <plan-id-or-path>`, `grilling-plan <plan-id-or-path>`, or `/grilling-plan <plan-id-or-path>`.
@@ -583,9 +592,31 @@ dependency-safe stages:
    - Web frontend repositories from `project/repositories.json`, when affected
    - App frontend repositories from `project/repositories.json`, when affected
 
-Skip any platform that is missing from the approved plan.
+Skip any platform that is missing from the approved plan. A workspace-only
+implementation uses one root stage.
 
-After core and API work are implemented and validated, reassess whether the
+### Per-Repository Code Review
+
+After implementation, the main agent starts two independent read-only
+sub-agents for each changed repository. **Tech Lead** checks maintainability,
+correctness, repository conventions, architecture, and applicable design
+guidelines. **Security** checks affected access, data handling, trust
+boundaries, and other relevant security controls.
+
+Both reviewers use the same task diff for that repository. Put local review
+steps in the repository's configured agent guide or a document it links.
+For root work use `AGENTS.md`. The [repository review instructions](.agents/skills/approve-plan/repository-code-review.md)
+define the review packet, role dispatch, remediation, and reporting.
+
+The main agent sends blocking findings to the implementation owner and requests
+review of the corrected changes. Dependent work proceeds after both reviewers
+clear the repository and its validation passes. Independent work can continue
+while another repository is blocked. The handoff reports both role outcomes,
+validation, and outstanding findings per repository.
+
+### Stage Readiness
+
+After core and API work clears code review and validation, reassess whether the
 frontend stage can run in parallel. If both frontend platforms are present in
 the approved plan, their required shared contracts and APIs are already
 available locally, and neither frontend depends on the other's unimplemented
