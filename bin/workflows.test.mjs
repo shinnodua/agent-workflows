@@ -5,6 +5,11 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import {
+	readCodexSnapshot,
+	verifyCodexChildSnapshots,
+} from "./codex-usage-snapshot.mjs";
+import { taskSummaryCheckpointCommand } from "./task-summary-checkpoints.mjs";
 
 const cli = fileURLToPath(new URL("./workflows.js", import.meta.url));
 
@@ -965,4 +970,208 @@ test("normalizes task summary usage for each runtime and reconciles revised reco
 	);
 	assert.equal(result.asOf, "2026-11-27T00:02:00.000Z");
 	assert.equal(call(["totals"], []).totals, null);
+	const legacy = Object.fromEntries(
+		Object.entries(antigravity).filter(([key]) => key !== "cacheRead"),
+	);
+	const enriched = call(["totals"], [legacy, antigravity, legacy]);
+	assert.equal(enriched.records.length, 1);
+	assert.equal(enriched.records[0].cacheRead, 20);
+	assert.equal(enriched.totals.total, 110);
+});
+
+test("checkpoints persist consecutive steps, replay exactly, and preserve unknown measurements", (context) => {
+	const root = fs.mkdtempSync(
+		path.join(os.tmpdir(), "task-summary-checkpoint-"),
+	);
+	context.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const directory = path.join(root, "task-summary");
+	fs.mkdirSync(directory);
+	const feature = "prd-20261127-checkpoint-fixture";
+	const target = path.join(directory, `${feature}.md`);
+	const template = fs.readFileSync(
+		new URL("../templates/task-summary-template.md", import.meta.url),
+		"utf8",
+	);
+	function sample(second, input, output) {
+		return {
+			threadAlias: "a".repeat(64),
+			asOf: `2026-11-27T00:00:${second}.000Z`,
+			total: {
+				inputTokens: input,
+				outputTokens: output,
+				totalTokens: input + output,
+			},
+		};
+	}
+
+	const observations = [
+		sample("01", 20, 5),
+		sample("02", 60, 10),
+		sample("03", 100, 20),
+		null,
+		sample("05", 110, 30),
+	];
+	const runCheckpoint = (...args) =>
+		taskSummaryCheckpointCommand(
+			root,
+			["checkpoint", args[0], feature, ...args.slice(1)],
+			() => observations.shift(),
+		);
+
+	assert.deepEqual(runCheckpoint("start", "Research", "attempt-1"), {
+		status: "started",
+		available: true,
+	});
+	assert.throws(
+		() => runCheckpoint("start", "Design", "attempt-2"),
+		/Finish the active step/,
+	);
+	// Sealed next can be retried after creating the summary without reading a later cutoff.
+	assert.throws(
+		() => runCheckpoint("next", "Research", "attempt-1", "Design", "attempt-2"),
+		{ code: "ENOENT" },
+	);
+	fs.writeFileSync(target, template, { mode: 0o644 });
+	const research = runCheckpoint(
+		"next",
+		"Research",
+		"attempt-1",
+		"Design",
+		"attempt-2",
+	);
+	const design = runCheckpoint("finish", "Design", "attempt-2");
+	assert.deepEqual(runCheckpoint("finish", "Design", "attempt-2"), design);
+	assert.equal(research.receipt.total, 45);
+	assert.equal(design.receipt.total, 50);
+	assert.equal(research.receipt.asOf, "2026-11-27T00:00:02.000Z");
+
+	runCheckpoint("start", "Validation", "attempt-3");
+	assert.equal(
+		runCheckpoint("finish", "Validation", "attempt-3").status,
+		"unavailable",
+	);
+	const contents = fs.readFileSync(target, "utf8");
+	assert.match(contents, /80 input, 15 output, 95 total/);
+	assert.match(contents, /\| Validation \| Unavailable \|/);
+	assert.equal(contents.match(/\| Design \|/g).length, 1);
+	assert.match(contents, /## Final handoff/);
+	assert.equal(fs.statSync(target).mode & 0o777, 0o644);
+
+	const native = spawnSync(
+		process.execPath,
+		[cli, "summary", "record", feature, "claude", "complete", "--root", root],
+		{
+			encoding: "utf8",
+			input: JSON.stringify({
+				id: "later-receipt",
+				step: "Validation",
+				asOf: "2026-11-27T00:00:06Z",
+				report: {
+					type: "result",
+					usage: { input_tokens: 10, output_tokens: 2 },
+				},
+			}),
+		},
+	);
+	assert.equal(native.status, 0, native.stderr);
+	assert.match(
+		fs.readFileSync(target, "utf8"),
+		/\| Validation \|[^\n]*\| Partial\. .*Earlier coverage gaps remain/,
+	);
+	taskSummaryCheckpointCommand(root, [
+		"reconcile",
+		feature,
+		"Validation",
+		"complete",
+	]);
+	assert.match(
+		fs.readFileSync(target, "utf8"),
+		/\| Validation \|[^\n]*\| Complete\./,
+	);
+});
+
+test("Codex snapshots bind matching rollout metadata and omit raw identities", (context) => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "task-summary-rollout-"));
+	context.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const dated = path.join(root, "2026/11/27");
+	fs.mkdirSync(dated, { recursive: true });
+	const parent = "00000000-0000-0000-0000-000000000001";
+	const child = "00000000-0000-0000-0000-000000000002";
+	const file = path.join(dated, `rollout-2026-11-27T00-00-00-${child}.jsonl`);
+	const events = [
+		{
+			type: "session_meta",
+			payload: {
+				id: child,
+				source: { subagent: { thread_spawn: { parent_thread_id: parent } } },
+			},
+		},
+		{ type: "event_msg", payload: { type: "task_started" } },
+		{
+			type: "event_msg",
+			timestamp: "2026-11-27T00:00:01Z",
+			payload: {
+				type: "token_count",
+				info: {
+					total_token_usage: {
+						input_tokens: 100,
+						output_tokens: 5,
+						total_tokens: 105,
+					},
+				},
+			},
+		},
+	];
+	fs.writeFileSync(
+		file,
+		`${events.map((event) => JSON.stringify(event)).join("\n")}\n`,
+	);
+	const snapshot = readCodexSnapshot(root, child);
+	assert.deepEqual(snapshot.total, {
+		inputTokens: 100,
+		outputTokens: 5,
+		totalTokens: 105,
+	});
+	assert.notEqual(snapshot.threadAlias, snapshot.parentAlias);
+	assert.doesNotMatch(
+		JSON.stringify(snapshot),
+		new RegExp(`${parent}|${child}`),
+	);
+	assert.equal(readCodexSnapshot(root, parent), null);
+	const second = structuredClone(events[2]);
+	second.timestamp = "2026-11-27T00:00:02Z";
+	second.payload.info.total_token_usage = {
+		input_tokens: 120,
+		output_tokens: 10,
+		total_tokens: 130,
+	};
+	fs.appendFileSync(file, `${JSON.stringify(second)}\n`);
+	const later = readCodexSnapshot(root, child);
+	assert.equal(
+		verifyCodexChildSnapshots(snapshot.parentAlias, snapshot, later, root),
+		true,
+	);
+	assert.equal(
+		verifyCodexChildSnapshots("0".repeat(64), snapshot, later, root),
+		false,
+	);
+	assert.equal(
+		verifyCodexChildSnapshots(
+			snapshot.parentAlias,
+			snapshot,
+			{
+				...later,
+				total: { inputTokens: 300, outputTokens: 100, totalTokens: 400 },
+			},
+			root,
+		),
+		false,
+	);
+
+	const duplicate = path.join(
+		dated,
+		`rollout-2026-11-27T01-00-00-${child}.jsonl`,
+	);
+	fs.copyFileSync(file, duplicate);
+	assert.equal(readCodexSnapshot(root, child), null);
 });

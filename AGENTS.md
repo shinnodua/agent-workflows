@@ -64,7 +64,7 @@ Workspace setup, PRD and planning commands, research, design, dashboard structur
 
 ## Agent Rules
 
-- After each workflow step, update the feature’s [Task Summary](templates/task-summary-workflow.md) before advancing or waiting for approval. Apply this in manual and auto mode.
+- Place usage checkpoints around each workflow step and update the [Task Summary](templates/task-summary-workflow.md) before advancing or waiting for approval. Apply this in manual and auto mode.
 - Ensure every feature or implementation task has a relevant PRD before planning or code changes, according to [workflows.md](workflows.md). In auto mode, the research stage comes before PRD creation.
 - At the start of a developer-initiated feature or implementation task, read `workspace.config.json`. If `autoMode.enabled` is `true`, read and follow `.agents/skills/auto-mode/SKILL.md` to progress through the full workflow. For older workspaces without `autoMode`, fall back to `.agent-workflows/metadata.json` until `workflows update` migrates it. Missing settings mean auto mode is off; malformed settings are an error. Auto mode authorizes internal artifact approvals and stage continuation for the active request, but does not authorize commits, pushes, publishing, deployment, or production changes.
 - After implementation in each changed repository, the main agent must dispatch Tech Lead and Security sub-agents and close the [repository code review and validation gate](.agents/skills/approve-plan/repository-code-review.md) before dependent work advances. This applies in manual and auto mode, including root-owned implementation.

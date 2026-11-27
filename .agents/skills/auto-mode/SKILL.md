@@ -34,7 +34,9 @@ authorizes intermediate PRD and plan approvals and stage continuation; it does
 not authorize commits, pushes, publishing, deployment, production changes, or
 work outside the requested feature.
 
-Advance through these stages in order, reusing verified artifacts if resuming:
+Run the [Task Summary checkpoints](../../../templates/task-summary-workflow.md#capture-usage-at-step-boundaries) before and after each stage. Give each delegated run the parent step and its own attempt ID. Reuse verified artifacts when resuming.
+
+Advance through these stages in order:
 
 1. **Research:** Follow `research/SKILL.md` and save a research brief linked to
    the request. Continue after the brief is complete.

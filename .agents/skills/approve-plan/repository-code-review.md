@@ -54,7 +54,7 @@ review scope. Repositories with no task change need no review.
 
 ## 3. Close the repository gate
 
-- Record each reviewer’s outcome in the [Task Summary](../../../templates/task-summary-workflow.md) as it arrives. Collect both results. Send substantiated blocking findings to the owning
+- Assign each reviewer a usage attempt under the repository review step. Collect its supported [usage receipt](../../../templates/task-summary-workflow.md#delegated-and-headless-runs) with the review. Record each reviewer’s outcome in the [Task Summary](../../../templates/task-summary-workflow.md) as it arrives. Collect both results. Send substantiated blocking findings to the owning
   implementer for in-scope corrections. Refresh the packet and have both
   reviewers confirm the updated change. After shared-contract changes, reopen
   any dependent review or check that relied on the old contract.

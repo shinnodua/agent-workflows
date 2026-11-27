@@ -61,15 +61,15 @@ function nativeCounts(runtime, report) {
 			const { usage } = antigravityResult(report);
 			const input = count(usage?.input_tokens);
 			const output = count(usage.output_tokens);
-			if (
-				count(usage.cache_read_tokens ?? 0) > input ||
-				count(usage.thinking_tokens ?? 0) > output
-			) {
+			if (count(usage.thinking_tokens ?? 0) > output) {
 				throw new Error(
-					"Antigravity usage reports an ambiguous cache or thinking breakdown.",
+					"Antigravity usage reports an inconsistent thinking breakdown.",
 				);
 			}
-			return counts(input, output, count(usage.total_tokens));
+			return {
+				...counts(input, output, count(usage.total_tokens)),
+				cacheRead: count(usage.cache_read_tokens ?? 0),
+			};
 		}
 		default:
 			throw new Error(
@@ -158,7 +158,9 @@ function metadata(runtime, record) {
 		runtime,
 		id: cleanLabel(record.id, "invocation ID"),
 		step: record.step == null ? null : cleanLabel(record.step, "step"),
-		model: record.model == null ? undefined : cleanLabel(record.model, "model"),
+		...(record.model == null
+			? {}
+			: { model: cleanLabel(record.model, "model") }),
 		asOf: date.toISOString(),
 		source:
 			runtime === "codex" && record.source === codexCounterSource
@@ -204,7 +206,11 @@ export function normalizeUsage(runtime, record) {
 	}
 
 	const baseline = nativeCounts(runtime, record.before);
-	return { ...details, ...delta(latest, baseline) };
+	return {
+		...details,
+		...delta(latest, baseline),
+		cacheRead: count(latest.cacheRead - baseline.cacheRead),
+	};
 }
 
 export function summarizeUsage(records) {
@@ -217,6 +223,9 @@ export function summarizeUsage(records) {
 			...details,
 			...counts(count(record.input), count(record.output), record.total),
 		};
+		if (details.runtime === "antigravity" && record.cacheRead !== undefined) {
+			next.cacheRead = count(record.cacheRead);
+		}
 		const key = JSON.stringify([details.runtime, details.id]);
 		const previous = byInvocation.get(key);
 		if (previous && previous.step !== next.step) {
@@ -224,11 +233,21 @@ export function summarizeUsage(records) {
 		}
 		if (
 			previous?.asOf === next.asOf &&
-			(previous.input !== next.input || previous.output !== next.output)
+			(previous.input !== next.input ||
+				previous.output !== next.output ||
+				(previous.cacheRead !== undefined &&
+					next.cacheRead !== undefined &&
+					previous.cacheRead !== next.cacheRead))
 		) {
 			throw new Error("Conflicting token measurements have the same cutoff.");
 		}
 		if (!previous || previous.asOf < next.asOf) byInvocation.set(key, next);
+		else if (
+			previous.asOf === next.asOf &&
+			previous.cacheRead === undefined &&
+			next.cacheRead !== undefined
+		)
+			byInvocation.set(key, { ...previous, cacheRead: next.cacheRead });
 	}
 
 	const unique = [...byInvocation.values()];

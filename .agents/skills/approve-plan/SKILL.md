@@ -51,7 +51,7 @@ instead.
    - `Approval command`: `$approve-plan <plan-id>`
    - In auto mode, record `Approved by: auto-mode (developer-enabled)` and
      `Approval command: $auto-mode on`.
-9. Implement in dependency-safe stages according to `project/workflows.json`. Before each stage, assess the remaining affected repositories/platforms and decide which can run in parallel.
+9. Implement in dependency-safe stages according to `project/workflows.json`. Place [Task Summary checkpoints](../../../templates/task-summary-workflow.md#capture-usage-at-step-boundaries) around implementation, review, and validation as separate steps. Before each stage, assess the remaining affected repositories/platforms and decide which can run in parallel.
    Before any implementation edits, read [Repository code review](repository-code-review.md) and capture the baseline for each assigned repository, including any root-owned work. For a root-only plan, run one root stage using `AGENTS.md` and the root checks in `project/validation.json`. Reassess stage readiness after review and validation because the finished contracts, APIs, generated outputs, or migrations may unblock later work.
 10. Parallel implementation for a stage is allowed only when every platform in that stage can be implemented against stable contracts and disjoint file ownership without requiring another platform's unimplemented local changes. Treat a platform as not ready for the current parallel stage when:
     - It depends on new or changed shared contracts from repositories tagged as `shared` or `core` that are not already implemented and available locally.
